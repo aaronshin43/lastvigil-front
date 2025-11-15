@@ -70,8 +70,8 @@ const ASSET_MANIFEST: AssetManifest = {
       "/assets/sprites/Skeleton_Archor/Skeleton_Archer_death.png",
   },
   vfx: {
-    fireHammer: {
-      path: "/assets/vfx/FireHammerRedV1-sheet.png",
+    fireHammerRed: {
+      path: "/assets/vfx/fire_hammer_red-sheet.png",
       metadata: {
         frameWidth: 128,
         frameHeight: 144,
@@ -82,7 +82,7 @@ const ASSET_MANIFEST: AssetManifest = {
       },
     },
     fireSlash: {
-      path: "/assets/vfx/FireSlash-Sheet-sheet.png",
+      path: "/assets/vfx/fire_slash-sheet.png",
       metadata: {
         frameWidth: 128,
         frameHeight: 128,
@@ -92,29 +92,29 @@ const ASSET_MANIFEST: AssetManifest = {
         scale: 1.5,
       },
     },
-    fireVortex: {
-      path: "/assets/vfx/Fire_vortex_red-sheet.png",
+    fireVortexRed: {
+      path: "/assets/vfx/fire_vortex_red-sheet.png",
       metadata: {
         frameWidth: 96,
         frameHeight: 144,
         frameCount: 27,
         frameDuration: 40,
-        loop: true,
+        loop: false,
         scale: 1.5,
       },
     },
-    fireHurricane: {
+    fireHurricaneBlue: {
       path: "/assets/vfx/fire_hurricane_blue-sheet.png",
       metadata: {
         frameWidth: 128,
         frameHeight: 100,
         frameCount: 17,
         frameDuration: 60,
-        loop: true,
+        loop: false,
         scale: 1.5,
       },
     },
-    meteorShower: {
+    meteorShowerRed: {
       path: "/assets/vfx/meteor_shower-red-sheet.png",
       metadata: {
         frameWidth: 192,
@@ -126,13 +126,46 @@ const ASSET_MANIFEST: AssetManifest = {
       },
     },
     tornado: {
-      path: "/assets/vfx/Tornado-Sheet-sheet.png",
+      path: "/assets/vfx/tornado-sheet.png",
       metadata: {
         frameWidth: 105,
         frameHeight: 100,
         frameCount: 14,
         frameDuration: 60,
-        loop: true,
+        loop: false,
+        scale: 1.5,
+      },
+    },
+    lightningV1: {
+      path: "/assets/vfx/lightning_v1-sheet.png",
+      metadata: {
+        frameWidth: 128,
+        frameHeight: 192,
+        frameCount: 8,
+        frameDuration: 50,
+        loop: false,
+        scale: 1.5,
+      },
+    },
+    lightningV2: {
+      path: "/assets/vfx/lightning_v2-sheet.png",
+      metadata: {
+        frameWidth: 128,
+        frameHeight: 192,
+        frameCount: 8,
+        frameDuration: 50,
+        loop: false,
+        scale: 1.5,
+      },
+    },
+    skyBeam: {
+      path: "/assets/vfx/sky_beam-sheet.png",
+      metadata: {
+        frameWidth: 192,
+        frameHeight: 256,
+        frameCount: 10,
+        frameDuration: 60,
+        loop: false,
         scale: 1.5,
       },
     },
