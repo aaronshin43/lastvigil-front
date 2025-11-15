@@ -1,13 +1,446 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>lastvigil-front</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vultr AI Brain Test</title>
+    <style>
+        body { 
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+        }
+        video { display: none; } /* 웹캠은 숨김 */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+        #canvas-container canvas { 
+            display: none; /* 웹캠 캔버스만 숨김 */
+        }
+        #circle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10;
+        }
+        /* 주석 처리: 디버그 정보와 결과 표시 숨김 */
+        /*
+        #debug-info {
+            position: absolute;
+            top: 30px;
+            left: 10px;
+            color: white;
+            font-size: 14px;
+            font-family: Arial;
+            text-shadow: 2px 2px 4px black;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #results { 
+            font-size: 2em; 
+            margin-top: 20px; 
+            border: 2px solid #555;
+            padding: 20px;
+            max-width: 800px;
+        }
+        */
+        #debug-info, #results, h1, p {
+            display: none;
+        }
+        #webcam-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 30px;
+            font-size: 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 100;
+            font-weight: bold;
+        }
+        #webcam-toggle:hover {
+            background: #45a049;
+        }
+        #webcam-toggle.active {
+            background: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="background-canvas"></canvas>
+    
+    <button id="webcam-toggle">Start Webcam</button>
+    
+    <h1>Vultr AI Brain Test</h1>
+    <p>Vultr is analyzing your face...</p>
+
+    <pre id="results">{"status": "connecting..."}</pre>
+
+    <div id="canvas-container">
+        <video id="video" width="640" height="480" autoplay playsinline></video>
+        <canvas id="canvas" width="640" height="480"></canvas>
+        <div id="debug-info"></div>
+    </div>
+    
+    <canvas id="circle-canvas"></canvas>
+
+    <script>
+        // ★ 중요: 'YOUR_VULTR_IP'를 실제 Vultr 서버 IP로 변경하세요!
+        const VULTR_SERVER_IP = "45.77.151.72";
+        const ws = new WebSocket(`ws://${VULTR_SERVER_IP}:8000/ws`);
+
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const resultsDisplay = document.getElementById('results');
+        const webcamToggleBtn = document.getElementById('webcam-toggle');
+        
+        // 배경 이미지용 캔버스
+        const backgroundCanvas = document.getElementById('background-canvas');
+        const backgroundCtx = backgroundCanvas.getContext('2d');
+        const mapImage = new Image();
+        mapImage.src = './public/assets/background_ingame_final_final.png';
+        
+        // 원 그리기용 캔버스
+        const circleCanvas = document.getElementById('circle-canvas');
+        const circleCtx = circleCanvas.getContext('2d');
+        
+        // 웹캠 상태 관리
+        let webcamActive = false;
+        let webcamStream = null;
+        let sendInterval = null;
+
+        // 이미지 스크롤 관리
+        let edgeHoldTimer = null;
+        let edgeHoldStartTime = 0;
+        let currentImageOffset = 0;
+        const EDGE_HOLD_THRESHOLD = 300; // 0.3초
+        const EDGE_THRESHOLD = 0.1; // 화면 10% 이내
+        
+        // 배경 이미지 그리기 함수
+        function drawBackground() {
+            if (mapImage.complete && mapImage.naturalWidth > 0) {
+                const imageHeight = window.innerHeight;
+                const imageWidth = mapImage.naturalWidth * (imageHeight / mapImage.naturalHeight);
+                const centerX = (window.innerWidth - imageWidth) / 2;
+                
+                backgroundCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+                backgroundCtx.drawImage(
+                    mapImage,
+                    centerX + currentImageOffset,
+                    0,
+                    imageWidth,
+                    imageHeight
+                );
+            }
+        }
+        
+        // 캔버스 크기를 윈도우 크기에 맞추기
+        function resizeCanvases() {
+            backgroundCanvas.width = window.innerWidth;
+            backgroundCanvas.height = window.innerHeight;
+            circleCanvas.width = window.innerWidth;
+            circleCanvas.height = window.innerHeight;
+            drawBackground();
+        }
+        resizeCanvases();
+        window.addEventListener('resize', resizeCanvases);
+        
+        // 이미지 로드 완료 시 그리기
+        mapImage.onload = () => {
+            drawBackground();
+        };
+
+        // 시선 스무딩 (서버에서 받은 목표 좌표)
+        let targetPosition = {
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2
+        };
+        
+        // 현재 화면에 표시되는 실제 원의 위치
+        let currentPosition = {
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2
+        };
+        
+        const CHASE_SPEED = 0.08; // 추격 속도 (0~1, 클수록 빠르게 따라감)
+
+        // WebSocket 이벤트 리스너
+        ws.onopen = () => {
+            console.log("Vultr 서버에 연결되었습니다.");
+            resultsDisplay.textContent = '{"status": "Connected!"}';
+        };
+
+        // 4. 서버로부터 분석 결과(JSON) 수신
+        ws.onmessage = (event) => {
+            // console.log("서버로부터 메시지 수신:", event.data);
+            const data = JSON.parse(event.data);
+            
+            /* 주석 처리: 요약된 정보 표시
+            const handCount = (data.hand_landmarks && data.hand_landmarks.length) || 0;
+            const summary = {
+                hands_detected: handCount || "None",
+                face_lr: data.face_direction_lr || "N/A",
+                face_ud: data.face_direction_ud || "N/A"
+            };
+            resultsDisplay.textContent = JSON.stringify(summary, null, 2);
+            */
+            
+            // 랜드마크 그리기
+            drawLandmarks(data);
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket 오류:", error);
+            resultsDisplay.textContent = '{"status": "Error! Check Vultr IP."}';
+        };
+
+        // 웹캠 토글 버튼 이벤트
+        webcamToggleBtn.addEventListener('click', () => {
+            if (webcamActive) {
+                stopWebcam();
+            } else {
+                startWebcam();
+            }
+        });
+
+        // 웹캠 시작 함수
+        function startWebcam() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    webcamStream = stream;
+                    video.srcObject = stream;
+                    video.onloadedmetadata = () => {
+                        webcamActive = true;
+                        webcamToggleBtn.textContent = 'Stop Webcam';
+                        webcamToggleBtn.classList.add('active');
+                        
+                        // 프레임 전송 시작
+                        sendInterval = setInterval(() => {
+                            sendFrameToServer();
+                        }, 50); // 50ms = 20fps
+                    };
+                })
+                .catch(err => {
+                    console.error("웹캠 오류:", err);
+                    alert('웹캠을 활성화할 수 없습니다.');
+                });
+        }
+
+        // 웹캠 중지 함수
+        function stopWebcam() {
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(track => track.stop());
+                webcamStream = null;
+            }
+            if (sendInterval) {
+                clearInterval(sendInterval);
+                sendInterval = null;
+            }
+            video.srcObject = null;
+            webcamActive = false;
+            webcamToggleBtn.textContent = 'Start Webcam';
+            webcamToggleBtn.classList.remove('active');
+            
+            // 원을 중앙으로 리셋
+            const circleElement = document.getElementById('circle');
+            circleElement.style.left = (window.innerWidth / 2) + 'px';
+            circleElement.style.top = (window.innerHeight / 2) + 'px';
+            circleElement.style.background = 'rgba(136, 136, 136, 0.5)';
+            circleElement.style.borderColor = '#666666';
+            
+            // 이미지 오프셋 리셋
+            currentImageOffset = 0;
+            edgeHoldStartTime = 0;
+            mapBackground.style.transform = 'translateX(-50%)';
+        }
+
+        /* 주석 처리: 자동 웹캠 시작
+        // 웹캠 켜기
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    // 3. 0.1초마다 (10fps) 웹캠 프레임을 Vultr로 전송
+                    setInterval(() => {
+                        sendFrameToServer();
+                    }, 50); // 50ms = 20fps
+                };
+            })
+            .catch(err => {
+                console.error("웹캠 오류:", err);
+                resultsDisplay.textContent = '{"status": "Webcam Error!"}';
+            });
+        */
+
+        // 프레임을 서버로 전송하는 함수
+        function sendFrameToServer() {
+            if (ws.readyState === WebSocket.OPEN) {
+                // 비디오 프레임을 캔버스에 그리기
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                // 캔버스 이미지를 Base64 (JPEG) 텍스트로 변환 (품질 0.7)
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+                // WebSocket으로 텍스트 전송
+                ws.send(dataUrl);
+            }
+        }
+
+        // 랜드마크 데이터를 처리하여 목표 위치 업데이트
+        function drawLandmarks(response) {
+            const debugInfo = document.getElementById('debug-info');
+
+            const data = response.face_key_points;
+            
+            // 새로운 데이터 구조: 주요 포인트 좌표
+            if (data.nose_tip && data.chin && data.forehead && 
+                data.left_face && data.right_face && 
+                data.left_eye && data.right_eye) {
+                
+                const nose_tip = data.nose_tip;
+                const chin = data.chin;
+                const forehead = data.forehead;
+                const left_face = data.left_face;
+                const right_face = data.right_face;
+                const left_eye = data.left_eye;
+                const right_eye = data.right_eye;
+                
+                // 2. 얼굴 중심점 (양쪽 눈 중간)
+                const face_center_x = (left_eye.x + right_eye.x) / 2;
+                const face_center_y = (left_eye.y + right_eye.y) / 2;
+                
+                // 3. Yaw (좌우 회전) 계산
+                const left_distance = Math.abs(nose_tip.x - left_face.x);
+                const right_distance = Math.abs(nose_tip.x - right_face.x);
+                const face_width = Math.abs(right_face.x - left_face.x);
+                
+                let yaw_ratio = 0.0;
+                if (face_width > 0) {
+                    yaw_ratio = (left_distance - right_distance) / face_width;
+                }
+                
+                // 4. Pitch (상하 회전) 계산
+                const nose_to_forehead = Math.abs(nose_tip.y - forehead.y);
+                const nose_to_chin = Math.abs(nose_tip.y - chin.y);
+                const face_height = Math.abs(chin.y - forehead.y);
+                
+                let pitch_ratio = 0.0;
+                if (face_height > 0) {
+                    pitch_ratio = (nose_to_chin - nose_to_forehead) / face_height + 0.15;
+                }
+                
+                // 5. 시선 좌표 매핑 (확장 배율 적용)
+                const gaze_scale_x = 1.5;  // 좌우 확장 배율
+                const gaze_scale_y = 6.0;  // 상하 확장 배율
+                
+                const gaze_x = face_center_x - (yaw_ratio * gaze_scale_x);
+                const gaze_y = face_center_y - (pitch_ratio * gaze_scale_y);
+                
+                // 목표 위치 업데이트 (화면 좌표로 변환)
+                const radius = 55;
+                targetPosition.x = gaze_x * window.innerWidth;
+                targetPosition.y = gaze_y * window.innerHeight;
+                
+                // 화면 밖으로 나가지 않도록 제한
+                targetPosition.x = Math.max(radius, Math.min(targetPosition.x, window.innerWidth - radius));
+                targetPosition.y = Math.max(radius, Math.min(targetPosition.y, window.innerHeight - radius));
+                
+            } else {
+                // 데이터가 없을 때 중앙으로 목표 설정
+                targetPosition.x = window.innerWidth / 2;
+                targetPosition.y = window.innerHeight / 2;
+            }
+        }
+        
+        // 60fps 애니메이션 루프
+        function animate() {
+            // 현재 위치를 목표 위치로 부드럽게 이동 (선형 보간)
+            currentPosition.x += (targetPosition.x - currentPosition.x) * CHASE_SPEED;
+            currentPosition.y += (targetPosition.y - currentPosition.y) * CHASE_SPEED;
+            
+            // 캔버스 클리어
+            circleCtx.clearRect(0, 0, circleCanvas.width, circleCanvas.height);
+            
+            // 원 그리기
+            const radius = 55;
+            
+            // 반투명 배경
+            circleCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            circleCtx.beginPath();
+            circleCtx.arc(currentPosition.x, currentPosition.y, radius, 0, 2 * Math.PI);
+            circleCtx.fill();
+            
+            // 파란색 테두리
+            circleCtx.strokeStyle = '#0066FF';
+            circleCtx.lineWidth = 2;
+            circleCtx.beginPath();
+            circleCtx.arc(currentPosition.x, currentPosition.y, radius, 0, 2 * Math.PI);
+            circleCtx.stroke();
+            
+            // 이미지 스크롤 로직
+            if (mapImage.complete && mapImage.naturalWidth > 0) {
+                const imageWidth = mapImage.naturalWidth * (window.innerHeight / mapImage.naturalHeight);
+                const maxScroll = (imageWidth - window.innerWidth) / 2;
+                
+                if (maxScroll > 0) {
+                    const normalizedX = currentPosition.x / window.innerWidth;
+                    const isAtLeftEdge = normalizedX < EDGE_THRESHOLD;
+                    const isAtRightEdge = normalizedX > (1 - EDGE_THRESHOLD);
+                    
+                    if (isAtLeftEdge || isAtRightEdge) {
+                        if (edgeHoldStartTime === 0) {
+                            edgeHoldStartTime = Date.now();
+                        }
+                        
+                        const holdDuration = Date.now() - edgeHoldStartTime;
+                        
+                        if (holdDuration >= EDGE_HOLD_THRESHOLD) {
+                            const scrollSpeed = 20;
+                            
+                            if (isAtLeftEdge) {
+                                currentImageOffset = Math.min(currentImageOffset + scrollSpeed, maxScroll);
+                            } else if (isAtRightEdge) {
+                                currentImageOffset = Math.max(currentImageOffset - scrollSpeed, -maxScroll);
+                            }
+                            
+                            drawBackground();
+                        }
+                    } else {
+                        edgeHoldStartTime = 0;
+                    }
+                } else {
+                    currentImageOffset = 0;
+                    drawBackground();
+                }
+            }
+            
+            // 다음 프레임 요청
+            requestAnimationFrame(animate);
+        }
+        
+        // 애니메이션 시작
+        animate();
+    </script>
+</body>
 </html>
