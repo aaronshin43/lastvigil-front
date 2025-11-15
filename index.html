@@ -1,47 +1,49 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Vultr AI Brain Test</title>
     <style>
-        body { 
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-        #background-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 0;
-        }
-        video { display: none; } /* 웹캠은 숨김 */
-        #canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
-        }
-        #canvas-container canvas { 
-            display: none; /* 웹캠 캔버스만 숨김 */
-        }
-        #circle-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 10;
-        }
-        /* 주석 처리: 디버그 정보와 결과 표시 숨김 */
-        /*
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+      #background-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+      }
+      video {
+        display: none;
+      } /* 웹캠은 숨김 */
+      #canvas-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1;
+      }
+      #canvas-container canvas {
+        display: none; /* 웹캠 캔버스만 숨김 */
+      }
+      #circle-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 10;
+      }
+      /* 주석 처리: 디버그 정보와 결과 표시 숨김 */
+      /*
         #debug-info {
             position: absolute;
             top: 30px;
@@ -102,10 +104,10 @@
             background: #F57C00;
         }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <canvas id="background-canvas"></canvas>
-    
+
     <button id="webcam-toggle">Start Webcam</button>
     <button id="effect-test-btn">Test Effect</button>
     
@@ -115,11 +117,11 @@
     <pre id="results">{"status": "connecting..."}</pre>
 
     <div id="canvas-container">
-        <video id="video" width="640" height="480" autoplay playsinline></video>
-        <canvas id="canvas" width="640" height="480"></canvas>
-        <div id="debug-info"></div>
+      <video id="video" width="640" height="480" autoplay playsinline></video>
+      <canvas id="canvas" width="640" height="480"></canvas>
+      <div id="debug-info"></div>
     </div>
-    
+
     <canvas id="circle-canvas"></canvas>
 
     <script type="module">
@@ -208,18 +210,18 @@
             drawBackground();
         };
 
-        // WebSocket 이벤트 리스너
-        ws.onopen = () => {
-            console.log("Vultr 서버에 연결되었습니다.");
-            resultsDisplay.textContent = '{"status": "Connected!"}';
-        };
+      // WebSocket 이벤트 리스너
+      ws.onopen = () => {
+        console.log("Vultr 서버에 연결되었습니다.");
+        resultsDisplay.textContent = '{"status": "Connected!"}';
+      };
 
-        // 4. 서버로부터 분석 결과(JSON) 수신
-        ws.onmessage = (event) => {
-            // console.log("서버로부터 메시지 수신:", event.data);
-            const data = JSON.parse(event.data);
-            
-            /* 주석 처리: 요약된 정보 표시
+      // 4. 서버로부터 분석 결과(JSON) 수신
+      ws.onmessage = (event) => {
+        // console.log("서버로부터 메시지 수신:", event.data);
+        const data = JSON.parse(event.data);
+
+        /* 주석 처리: 요약된 정보 표시
             const handCount = (data.hand_landmarks && data.hand_landmarks.length) || 0;
             const summary = {
                 hands_detected: handCount || "None",
@@ -228,15 +230,15 @@
             };
             resultsDisplay.textContent = JSON.stringify(summary, null, 2);
             */
-            
-            // 랜드마크 그리기
-            drawLandmarks(data);
-        };
 
-        ws.onerror = (error) => {
-            console.error("WebSocket 오류:", error);
-            resultsDisplay.textContent = '{"status": "Error! Check Vultr IP."}';
-        };
+        // 랜드마크 그리기
+        drawLandmarks(data);
+      };
+
+      ws.onerror = (error) => {
+        console.error("WebSocket 오류:", error);
+        resultsDisplay.textContent = '{"status": "Error! Check Vultr IP."}';
+      };
 
         // 웹캠 토글 버튼 이벤트
         webcamToggleBtn.addEventListener('click', () => {
@@ -270,28 +272,29 @@
             activeEffects.push(effect);
         }
 
-        // 웹캠 시작 함수
-        function startWebcam() {
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(stream => {
-                    webcamStream = stream;
-                    video.srcObject = stream;
-                    video.onloadedmetadata = () => {
-                        webcamActive = true;
-                        webcamToggleBtn.textContent = 'Stop Webcam';
-                        webcamToggleBtn.classList.add('active');
-                        
-                        // 프레임 전송 시작
-                        sendInterval = setInterval(() => {
-                            sendFrameToServer();
-                        }, 50); // 50ms = 20fps
-                    };
-                })
-                .catch(err => {
-                    console.error("웹캠 오류:", err);
-                    alert('웹캠을 활성화할 수 없습니다.');
-                });
-        }
+      // 웹캠 시작 함수
+      function startWebcam() {
+        navigator.mediaDevices
+          .getUserMedia({ video: true })
+          .then((stream) => {
+            webcamStream = stream;
+            video.srcObject = stream;
+            video.onloadedmetadata = () => {
+              webcamActive = true;
+              webcamToggleBtn.textContent = "Stop Webcam";
+              webcamToggleBtn.classList.add("active");
+
+              // 프레임 전송 시작
+              sendInterval = setInterval(() => {
+                sendFrameToServer();
+              }, 50); // 50ms = 20fps
+            };
+          })
+          .catch((err) => {
+            console.error("웹캠 오류:", err);
+            alert("웹캠을 활성화할 수 없습니다.");
+          });
+      }
 
         // 웹캠 중지 함수
         function stopWebcam() {
@@ -316,7 +319,7 @@
             edgeHoldStartTime = 0;
         }
 
-        /* 주석 처리: 자동 웹캠 시작
+      /* 주석 처리: 자동 웹캠 시작
         // 웹캠 켜기
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
@@ -334,23 +337,23 @@
             });
         */
 
-        // 프레임을 서버로 전송하는 함수
-        function sendFrameToServer() {
-            if (ws.readyState === WebSocket.OPEN) {
-                // 비디오 프레임을 캔버스에 그리기
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // 프레임을 서버로 전송하는 함수
+      function sendFrameToServer() {
+        if (ws.readyState === WebSocket.OPEN) {
+          // 비디오 프레임을 캔버스에 그리기
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                // 캔버스 이미지를 Base64 (JPEG) 텍스트로 변환 (품질 0.7)
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          // 캔버스 이미지를 Base64 (JPEG) 텍스트로 변환 (품질 0.7)
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
 
-                // WebSocket으로 텍스트 전송
-                ws.send(dataUrl);
-            }
+          // WebSocket으로 텍스트 전송
+          ws.send(dataUrl);
         }
+      }
 
-        // 랜드마크 데이터를 처리하여 목표 위치 업데이트
-        function drawLandmarks(response) {
-            const debugInfo = document.getElementById('debug-info');
+      // 랜드마크 데이터를 처리하여 목표 위치 업데이트
+      function drawLandmarks(response) {
+        const debugInfo = document.getElementById("debug-info");
 
             const data = response.face_key_points;
             
@@ -486,5 +489,5 @@
         // 애니메이션 시작
         animate();
     </script>
-</body>
+  </body>
 </html>
