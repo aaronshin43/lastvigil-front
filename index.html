@@ -89,12 +89,30 @@
       #webcam-toggle.active {
         background: #f44336;
       }
+      #effect-test-btn {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        padding: 15px 30px;
+        font-size: 16px;
+        background: #ff9800;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 100;
+        font-weight: bold;
+      }
+      #effect-test-btn:hover {
+        background: #f57c00;
+      }
     </style>
   </head>
   <body>
     <canvas id="background-canvas"></canvas>
 
     <button id="webcam-toggle">Start Webcam</button>
+    <button id="effect-test-btn">Test Effect</button>
 
     <h1>Vultr AI Brain Test</h1>
     <p>Vultr is analyzing your face...</p>
@@ -109,7 +127,10 @@
 
     <canvas id="circle-canvas"></canvas>
 
-    <script>
+    <script type="module">
+      // Effects.ts 임포트
+      import { Effect } from "./src/gameplay/Effects.ts";
+
       // ★ 중요: 'YOUR_VULTR_IP'를 실제 Vultr 서버 IP로 변경하세요!
       const VULTR_SERVER_IP = "localhost";
       const ws = new WebSocket(`ws://${VULTR_SERVER_IP}:8000/ws`);
@@ -119,6 +140,7 @@
       const context = canvas.getContext("2d");
       const resultsDisplay = document.getElementById("results");
       const webcamToggleBtn = document.getElementById("webcam-toggle");
+      const effectTestBtn = document.getElementById("effect-test-btn");
 
       // 배경 이미지용 캔버스
       const backgroundCanvas = document.getElementById("background-canvas");
@@ -126,15 +148,11 @@
       const mapImage = new Image();
       mapImage.src = "/assets/maps/background_ingame_final_final.png";
 
-      // Wizard 스프라이트 이미지
-      const wizardImage = new Image();
-      wizardImage.src = "/assets/sprites/Armored_Orc/Armored_Orc_walk.png";
-
-      // Wizard 애니메이션 설정
-      let wizardFrameIndex = 0;
-      const wizardTotalFrames = 8;
-      const wizardFrameRate = 10; // 10프레임마다 이미지 변경 (약 6fps)
-      let wizardFrameCounter = 0;
+      // 이펙트 시스템 초기화
+      const effectImage = new Image();
+      effectImage.src = "/assets/vfx/FireHammerRedV1-sheet.png";
+      const activeEffects = [];
+      let lastFrameTime = Date.now();
 
       // 원 그리기용 캔버스
       const circleCanvas = document.getElementById("circle-canvas");
@@ -173,33 +191,6 @@
             imageWidth,
             imageHeight
           );
-
-          // Wizard를 맵의 왼쪽에 그리기
-          if (wizardImage.complete && wizardImage.naturalWidth > 0) {
-            const wizardHeight = 500; // Wizard 높이 (크기 조절)
-            const wizardWidth =
-              wizardImage.naturalWidth *
-              (wizardHeight / wizardImage.naturalHeight);
-            const wizardX = 50; // 왼쪽에서 50px 떨어진 위치
-            const wizardY = window.innerHeight - wizardHeight - 50; // 바닥에서 50px 위
-
-            // 스프라이트시트에서 현재 프레임의 영역 계산
-            const frameWidth = wizardImage.naturalWidth / wizardTotalFrames;
-            const frameHeight = wizardImage.naturalHeight;
-            const sourceX = wizardFrameIndex * frameWidth;
-
-            backgroundCtx.drawImage(
-              wizardImage,
-              sourceX,
-              0,
-              frameWidth,
-              frameHeight, // 원본 이미지의 특정 프레임 영역
-              wizardX + currentImageOffset, // 배경과 함께 스크롤
-              wizardY,
-              frameWidth * (wizardHeight / frameHeight), // 비율 유지
-              wizardHeight
-            );
-          }
         }
       }
 
@@ -216,10 +207,6 @@
 
       // 이미지 로드 완료 시 그리기
       mapImage.onload = () => {
-        drawBackground();
-      };
-
-      wizardImage.onload = () => {
         drawBackground();
       };
 
@@ -275,6 +262,28 @@
           startWebcam();
         }
       });
+
+      // 이펙트 테스트 버튼 이벤트
+      effectTestBtn.addEventListener("click", () => {
+        // 현재 원(시선 커서) 위치에 이펙트 생성
+        createEffect(currentPosition.x, currentPosition.y);
+      });
+
+      // 이펙트 생성 함수
+      function createEffect(x, y) {
+        const effect = new Effect({
+          x: x,
+          y: y,
+          image: effectImage,
+          frameWidth: 128, // 스프라이트 한 프레임 너비 (실제 이미지에 맞게 조정)
+          frameHeight: 144, // 스프라이트 한 프레임 높이 (실제 이미지에 맞게 조정)
+          frameCount: 19, // 총 프레임 수 (실제 스프라이트시트에 맞게 조정)
+          frameDuration: 60, // 각 프레임 지속 시간 (ms)
+          loop: false,
+          scale: 1.5,
+        });
+        activeEffects.push(effect);
+      }
 
       // 웹캠 시작 함수
       function startWebcam() {
@@ -439,19 +448,26 @@
 
       // 60fps 애니메이션 루프
       function animate() {
-        // Wizard 애니메이션 업데이트
-        wizardFrameCounter++;
-        if (wizardFrameCounter >= wizardFrameRate) {
-          wizardFrameCounter = 0;
-          wizardFrameIndex = (wizardFrameIndex + 1) % wizardTotalFrames;
-          drawBackground(); // Wizard 프레임 변경 시 배경 다시 그리기
-        }
+        // deltaTime 계산
+        const now = Date.now();
+        const deltaTime = now - lastFrameTime;
+        lastFrameTime = now;
 
         // 현재 위치를 목표 위치로 부드럽게 이동 (선형 보간)
         currentPosition.x +=
           (targetPosition.x - currentPosition.x) * CHASE_SPEED;
         currentPosition.y +=
           (targetPosition.y - currentPosition.y) * CHASE_SPEED;
+
+        // 이펙트 업데이트
+        for (let i = activeEffects.length - 1; i >= 0; i--) {
+          activeEffects[i].update(deltaTime);
+
+          // 완료된 이펙트 제거
+          if (activeEffects[i].isComplete()) {
+            activeEffects.splice(i, 1);
+          }
+        }
 
         // 캔버스 클리어
         circleCtx.clearRect(0, 0, circleCanvas.width, circleCanvas.height);
@@ -483,6 +499,11 @@
           2 * Math.PI
         );
         circleCtx.stroke();
+
+        // 이펙트 그리기
+        for (const effect of activeEffects) {
+          effect.draw(circleCtx);
+        }
 
         // 이미지 스크롤 로직
         if (mapImage.complete && mapImage.naturalWidth > 0) {
