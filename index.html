@@ -63,46 +63,49 @@
             max-width: 800px;
         }
         */
-        #debug-info, #results, h1, p {
-            display: none;
-        }
-        #webcam-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 30px;
-            font-size: 16px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 100;
-            font-weight: bold;
-        }
-        #webcam-toggle:hover {
-            background: #45a049;
-        }
-        #webcam-toggle.active {
-            background: #f44336;
-        }
-        #effect-test-btn {
-            position: fixed;
-            top: 70px;
-            right: 20px;
-            padding: 15px 30px;
-            font-size: 16px;
-            background: #FF9800;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 100;
-            font-weight: bold;
-        }
-        #effect-test-btn:hover {
-            background: #F57C00;
-        }
+      #debug-info,
+      #results,
+      h1,
+      p {
+        display: none;
+      }
+      #webcam-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 30px;
+        font-size: 16px;
+        background: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 100;
+        font-weight: bold;
+      }
+      #webcam-toggle:hover {
+        background: #45a049;
+      }
+      #webcam-toggle.active {
+        background: #f44336;
+      }
+      #effect-test-btn {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        padding: 15px 30px;
+        font-size: 16px;
+        background: #ff9800;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 100;
+        font-weight: bold;
+      }
+      #effect-test-btn:hover {
+        background: #f57c00;
+      }
     </style>
   </head>
   <body>
@@ -110,7 +113,7 @@
 
     <button id="webcam-toggle">Start Webcam</button>
     <button id="effect-test-btn">Test Effect</button>
-    
+
     <h1>Vultr AI Brain Test</h1>
     <p>Vultr is analyzing your face...</p>
 
@@ -125,90 +128,106 @@
     <canvas id="circle-canvas"></canvas>
 
     <script type="module">
-        // 모듈 임포트
-        import { Effect } from './src/gameplay/Effect.ts';
-        import { GazeCursor } from './src/gameplay/GazeCursor.ts';
+      // 모듈 임포트
+      import { Effect } from "./src/gameplay/Effect.ts";
+      import { GazeCursor } from "./src/gameplay/GazeCursor.ts";
+      import { AssetLoader } from "./src/core/AssetLoader.ts";
 
-        // ★ 중요: 'YOUR_VULTR_IP'를 실제 Vultr 서버 IP로 변경하세요!
-        const VULTR_SERVER_IP = "localhost";
-        const ws = new WebSocket(`ws://${VULTR_SERVER_IP}:8000/ws`);
+      // ★ 중요: 'YOUR_VULTR_IP'를 실제 Vultr 서버 IP로 변경하세요!
+      const VULTR_SERVER_IP = "localhost";
+      const ws = new WebSocket(`ws://${VULTR_SERVER_IP}:8000/ws`);
 
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
-        const resultsDisplay = document.getElementById('results');
-        const webcamToggleBtn = document.getElementById('webcam-toggle');
-        const effectTestBtn = document.getElementById('effect-test-btn');
-        
-        // 배경 이미지용 캔버스
-        const backgroundCanvas = document.getElementById('background-canvas');
-        const backgroundCtx = backgroundCanvas.getContext('2d');
-        const mapImage = new Image();
-        mapImage.src = '/assets/maps/background_ingame_final_final.png';
-        
-        // 이펙트 시스템 초기화
-        const effectImage = new Image();
-        effectImage.src = '/assets/vfx/FireHammerRedV1-sheet.png';
-        const activeEffects = [];
-        let lastFrameTime = Date.now();
-        
-        // 원 그리기용 캔버스
-        const circleCanvas = document.getElementById('circle-canvas');
-        const circleCtx = circleCanvas.getContext('2d');
-        
-        // GazeCursor 초기화
-        const gazeCursor = new GazeCursor({
-            radius: 55,
-            chaseSpeed: 0.08,
-            initialX: window.innerWidth / 2,
-            initialY: window.innerHeight / 2
-        });
-        
-        // 웹캠 상태 관리
-        let webcamActive = false;
-        let webcamStream = null;
-        let sendInterval = null;
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const context = canvas.getContext("2d");
+      const resultsDisplay = document.getElementById("results");
+      const webcamToggleBtn = document.getElementById("webcam-toggle");
+      const effectTestBtn = document.getElementById("effect-test-btn");
 
-        // 이미지 스크롤 관리
-        let edgeHoldTimer = null;
-        let edgeHoldStartTime = 0;
-        let currentImageOffset = 0;
-        const EDGE_HOLD_THRESHOLD = 300; // 0.3초
-        const EDGE_THRESHOLD = 0.1; // 화면 10% 이내
-        
-        // 배경 이미지 그리기 함수
-        function drawBackground() {
-            if (mapImage.complete && mapImage.naturalWidth > 0) {
-                const imageHeight = window.innerHeight;
-                const imageWidth = mapImage.naturalWidth * (imageHeight / mapImage.naturalHeight);
-                const centerX = (window.innerWidth - imageWidth) / 2;
-                
-                backgroundCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-                backgroundCtx.drawImage(
-                    mapImage,
-                    centerX + currentImageOffset,
-                    0,
-                    imageWidth,
-                    imageHeight
-                );
-            }
+      // AssetLoader 인스턴스 생성 및 에셋 로드
+      const assetLoader = new AssetLoader();
+      let assetsLoaded = false;
+      assetLoader.loadAll().then(() => {
+        assetsLoaded = true;
+        // 배경 이미지 및 이펙트 이미지 등 로드 완료 후 초기화
+        drawBackground();
+      });
+
+      // 배경 이미지용 캔버스
+      const backgroundCanvas = document.getElementById("background-canvas");
+      const backgroundCtx = backgroundCanvas.getContext("2d");
+
+      // 배경 이미지는 AssetLoader에서 가져옴
+      function getMapImage() {
+        return assetLoader.getMap("graveyard");
+      }
+
+      // 이펙트 시스템 초기화
+      const activeEffects = [];
+      let lastFrameTime = Date.now();
+
+      // 원 그리기용 캔버스
+      const circleCanvas = document.getElementById("circle-canvas");
+      const circleCtx = circleCanvas.getContext("2d");
+
+      // GazeCursor 초기화
+      const gazeCursor = new GazeCursor({
+        radius: 55,
+        chaseSpeed: 0.08,
+        initialX: window.innerWidth / 2,
+        initialY: window.innerHeight / 2,
+      });
+
+      // 웹캠 상태 관리
+      let webcamActive = false;
+      let webcamStream = null;
+      let sendInterval = null;
+
+      // 이미지 스크롤 관리
+      let edgeHoldTimer = null;
+      let edgeHoldStartTime = 0;
+      let currentImageOffset = 0;
+      const EDGE_HOLD_THRESHOLD = 300; // 0.3초
+      const EDGE_THRESHOLD = 0.1; // 화면 10% 이내
+
+      // 배경 이미지 그리기 함수 (AssetLoader 사용)
+      function drawBackground() {
+        const mapImage = getMapImage();
+        if (mapImage && mapImage.complete && mapImage.naturalWidth > 0) {
+          const imageHeight = window.innerHeight;
+          const imageWidth =
+            mapImage.naturalWidth * (imageHeight / mapImage.naturalHeight);
+          const centerX = (window.innerWidth - imageWidth) / 2;
+
+          backgroundCtx.clearRect(
+            0,
+            0,
+            backgroundCanvas.width,
+            backgroundCanvas.height
+          );
+          backgroundCtx.drawImage(
+            mapImage,
+            centerX + currentImageOffset,
+            0,
+            imageWidth,
+            imageHeight
+          );
         }
-        
-        // 캔버스 크기를 윈도우 크기에 맞추기
-        function resizeCanvases() {
-            backgroundCanvas.width = window.innerWidth;
-            backgroundCanvas.height = window.innerHeight;
-            circleCanvas.width = window.innerWidth;
-            circleCanvas.height = window.innerHeight;
-            drawBackground();
-        }
-        resizeCanvases();
-        window.addEventListener('resize', resizeCanvases);
-        
-        // 이미지 로드 완료 시 그리기
-        mapImage.onload = () => {
-            drawBackground();
-        };
+      }
+
+      // 캔버스 크기를 윈도우 크기에 맞추기
+      function resizeCanvases() {
+        backgroundCanvas.width = window.innerWidth;
+        backgroundCanvas.height = window.innerHeight;
+        circleCanvas.width = window.innerWidth;
+        circleCanvas.height = window.innerHeight;
+        drawBackground();
+      }
+      resizeCanvases();
+      window.addEventListener("resize", resizeCanvases);
+
+      // AssetLoader로 로드된 후 배경 그리기
+      // (이미지 로드 완료 후 drawBackground는 loadAll().then에서 호출)
 
       // WebSocket 이벤트 리스너
       ws.onopen = () => {
@@ -240,37 +259,44 @@
         resultsDisplay.textContent = '{"status": "Error! Check Vultr IP."}';
       };
 
-        // 웹캠 토글 버튼 이벤트
-        webcamToggleBtn.addEventListener('click', () => {
-            if (webcamActive) {
-                stopWebcam();
-            } else {
-                startWebcam();
-            }
-        });
-
-        // 이펙트 테스트 버튼 이벤트
-        effectTestBtn.addEventListener('click', () => {
-            // 현재 원(시선 커서) 위치에 이펙트 생성
-            const pos = gazeCursor.getPosition();
-            createEffect(pos.x, pos.y);
-        });
-
-        // 이펙트 생성 함수
-        function createEffect(x, y) {
-            const effect = new Effect({
-                x: x,
-                y: y,
-                image: effectImage,
-                frameWidth: 128,      // 스프라이트 한 프레임 너비 (실제 이미지에 맞게 조정)
-                frameHeight: 144,     // 스프라이트 한 프레임 높이 (실제 이미지에 맞게 조정)
-                frameCount: 19,        // 총 프레임 수 (실제 스프라이트시트에 맞게 조정)
-                frameDuration: 60,    // 각 프레임 지속 시간 (ms)
-                loop: false,
-                scale: 1.5
-            });
-            activeEffects.push(effect);
+      // 웹캠 토글 버튼 이벤트
+      webcamToggleBtn.addEventListener("click", () => {
+        if (webcamActive) {
+          stopWebcam();
+        } else {
+          startWebcam();
         }
+      });
+
+      // 이펙트 테스트 버튼 이벤트 (AssetLoader 활용)
+      effectTestBtn.addEventListener("click", () => {
+        if (!assetsLoaded) {
+          alert("에셋이 아직 로드되지 않았습니다. 잠시만 기다려주세요.");
+          return;
+        }
+        // 현재 원(시선 커서) 위치에 이펙트 생성
+        const pos = gazeCursor.getPosition();
+        createEffect(pos.x, pos.y);
+      });
+
+      // 이펙트 생성 함수 (AssetLoader에서 이미지/메타데이터 사용)
+      function createEffect(x, y) {
+        const vfx = assetLoader.getVFXWithMetadata("fireHammer");
+        if (!vfx) return;
+        const { image, metadata } = vfx;
+        const effect = new Effect({
+          x: x,
+          y: y,
+          image: image,
+          frameWidth: metadata.frameWidth,
+          frameHeight: metadata.frameHeight,
+          frameCount: metadata.frameCount,
+          frameDuration: metadata.frameDuration,
+          loop: metadata.loop,
+          scale: metadata.scale,
+        });
+        activeEffects.push(effect);
+      }
 
       // 웹캠 시작 함수
       function startWebcam() {
@@ -296,28 +322,28 @@
           });
       }
 
-        // 웹캠 중지 함수
-        function stopWebcam() {
-            if (webcamStream) {
-                webcamStream.getTracks().forEach(track => track.stop());
-                webcamStream = null;
-            }
-            if (sendInterval) {
-                clearInterval(sendInterval);
-                sendInterval = null;
-            }
-            video.srcObject = null;
-            webcamActive = false;
-            webcamToggleBtn.textContent = 'Start Webcam';
-            webcamToggleBtn.classList.remove('active');
-            
-            // 커서를 중앙으로 리셋
-            gazeCursor.setPosition(window.innerWidth / 2, window.innerHeight / 2);
-            
-            // 이미지 오프셋 리셋
-            currentImageOffset = 0;
-            edgeHoldStartTime = 0;
+      // 웹캠 중지 함수
+      function stopWebcam() {
+        if (webcamStream) {
+          webcamStream.getTracks().forEach((track) => track.stop());
+          webcamStream = null;
         }
+        if (sendInterval) {
+          clearInterval(sendInterval);
+          sendInterval = null;
+        }
+        video.srcObject = null;
+        webcamActive = false;
+        webcamToggleBtn.textContent = "Start Webcam";
+        webcamToggleBtn.classList.remove("active");
+
+        // 커서를 중앙으로 리셋
+        gazeCursor.setPosition(window.innerWidth / 2, window.innerHeight / 2);
+
+        // 이미지 오프셋 리셋
+        currentImageOffset = 0;
+        edgeHoldStartTime = 0;
+      }
 
       /* 주석 처리: 자동 웹캠 시작
         // 웹캠 켜기
@@ -355,139 +381,157 @@
       function drawLandmarks(response) {
         const debugInfo = document.getElementById("debug-info");
 
-            const data = response.face_key_points;
-            
-            // 새로운 데이터 구조: 주요 포인트 좌표
-            if (data.nose_tip && data.chin && data.forehead && 
-                data.left_face && data.right_face && 
-                data.left_eye && data.right_eye) {
-                
-                const nose_tip = data.nose_tip;
-                const chin = data.chin;
-                const forehead = data.forehead;
-                const left_face = data.left_face;
-                const right_face = data.right_face;
-                const left_eye = data.left_eye;
-                const right_eye = data.right_eye;
-                
-                // 2. 얼굴 중심점 (양쪽 눈 중간)
-                const face_center_x = (left_eye.x + right_eye.x) / 2;
-                const face_center_y = (left_eye.y + right_eye.y) / 2;
-                
-                // 3. Yaw (좌우 회전) 계산
-                const left_distance = Math.abs(nose_tip.x - left_face.x);
-                const right_distance = Math.abs(nose_tip.x - right_face.x);
-                const face_width = Math.abs(right_face.x - left_face.x);
-                
-                let yaw_ratio = 0.0;
-                if (face_width > 0) {
-                    yaw_ratio = (left_distance - right_distance) / face_width;
-                }
-                
-                // 4. Pitch (상하 회전) 계산
-                const nose_to_forehead = Math.abs(nose_tip.y - forehead.y);
-                const nose_to_chin = Math.abs(nose_tip.y - chin.y);
-                const face_height = Math.abs(chin.y - forehead.y);
-                
-                let pitch_ratio = 0.0;
-                if (face_height > 0) {
-                    pitch_ratio = (nose_to_chin - nose_to_forehead) / face_height + 0.15;
-                }
-                
-                // 5. 시선 좌표 매핑 (확장 배율 적용)
-                const gaze_scale_x = 1.5;  // 좌우 확장 배율
-                const gaze_scale_y = 6.0;  // 상하 확장 배율
-                
-                const gaze_x = face_center_x - (yaw_ratio * gaze_scale_x);
-                const gaze_y = face_center_y - (pitch_ratio * gaze_scale_y);
-                
-                // 목표 위치 업데이트 (화면 좌표로 변환)
-                const targetX = gaze_x * window.innerWidth;
-                const targetY = gaze_y * window.innerHeight;
-                
-                gazeCursor.setTarget(targetX, targetY);
-                gazeCursor.clampToBounds(window.innerWidth, window.innerHeight);
-                
-            } else {
-                // 데이터가 없을 때 중앙으로 목표 설정
-                gazeCursor.setTarget(window.innerWidth / 2, window.innerHeight / 2);
-            }
-        }
-        
-        // 60fps 애니메이션 루프
-        function animate() {
-            // deltaTime 계산
-            const now = Date.now();
-            const deltaTime = now - lastFrameTime;
-            lastFrameTime = now;
+        const data = response.face_key_points;
 
-            // 시선 커서 업데이트
-            gazeCursor.update();
-            
-            // 이펙트 업데이트
-            for (let i = activeEffects.length - 1; i >= 0; i--) {
-                activeEffects[i].update(deltaTime);
-                
-                // 완료된 이펙트 제거
-                if (activeEffects[i].isComplete()) {
-                    activeEffects.splice(i, 1);
-                }
-            }
-            
-            // 캔버스 클리어
-            circleCtx.clearRect(0, 0, circleCanvas.width, circleCanvas.height);
-            
-            // 시선 커서 그리기
-            gazeCursor.draw(circleCtx);
-            
-            // 이펙트 그리기
-            for (const effect of activeEffects) {
-                effect.draw(circleCtx);
-            }
-            
-            // 이미지 스크롤 로직
-            if (mapImage.complete && mapImage.naturalWidth > 0) {
-                const imageWidth = mapImage.naturalWidth * (window.innerHeight / mapImage.naturalHeight);
-                const maxScroll = (imageWidth - window.innerWidth) / 2;
-                
-                if (maxScroll > 0) {
-                    const edgeDirection = gazeCursor.checkEdgeProximity(window.innerWidth, window.innerHeight, EDGE_THRESHOLD);
-                    const isAtLeftEdge = edgeDirection === 'left';
-                    const isAtRightEdge = edgeDirection === 'right';
-                    
-                    if (isAtLeftEdge || isAtRightEdge) {
-                        if (edgeHoldStartTime === 0) {
-                            edgeHoldStartTime = Date.now();
-                        }
-                        
-                        const holdDuration = Date.now() - edgeHoldStartTime;
-                        
-                        if (holdDuration >= EDGE_HOLD_THRESHOLD) {
-                            const scrollSpeed = 20;
-                            
-                            if (isAtLeftEdge) {
-                                currentImageOffset = Math.min(currentImageOffset + scrollSpeed, maxScroll);
-                            } else if (isAtRightEdge) {
-                                currentImageOffset = Math.max(currentImageOffset - scrollSpeed, -maxScroll);
-                            }
-                            
-                            drawBackground();
-                        }
-                    } else {
-                        edgeHoldStartTime = 0;
-                    }
-                } else {
-                    currentImageOffset = 0;
-                    drawBackground();
-                }
-            }
-            
-            // 다음 프레임 요청
-            requestAnimationFrame(animate);
+        // 새로운 데이터 구조: 주요 포인트 좌표
+        if (
+          data.nose_tip &&
+          data.chin &&
+          data.forehead &&
+          data.left_face &&
+          data.right_face &&
+          data.left_eye &&
+          data.right_eye
+        ) {
+          const nose_tip = data.nose_tip;
+          const chin = data.chin;
+          const forehead = data.forehead;
+          const left_face = data.left_face;
+          const right_face = data.right_face;
+          const left_eye = data.left_eye;
+          const right_eye = data.right_eye;
+
+          // 2. 얼굴 중심점 (양쪽 눈 중간)
+          const face_center_x = (left_eye.x + right_eye.x) / 2;
+          const face_center_y = (left_eye.y + right_eye.y) / 2;
+
+          // 3. Yaw (좌우 회전) 계산
+          const left_distance = Math.abs(nose_tip.x - left_face.x);
+          const right_distance = Math.abs(nose_tip.x - right_face.x);
+          const face_width = Math.abs(right_face.x - left_face.x);
+
+          let yaw_ratio = 0.0;
+          if (face_width > 0) {
+            yaw_ratio = (left_distance - right_distance) / face_width;
+          }
+
+          // 4. Pitch (상하 회전) 계산
+          const nose_to_forehead = Math.abs(nose_tip.y - forehead.y);
+          const nose_to_chin = Math.abs(nose_tip.y - chin.y);
+          const face_height = Math.abs(chin.y - forehead.y);
+
+          let pitch_ratio = 0.0;
+          if (face_height > 0) {
+            pitch_ratio =
+              (nose_to_chin - nose_to_forehead) / face_height + 0.15;
+          }
+
+          // 5. 시선 좌표 매핑 (확장 배율 적용)
+          const gaze_scale_x = 1.5; // 좌우 확장 배율
+          const gaze_scale_y = 6.0; // 상하 확장 배율
+
+          const gaze_x = face_center_x - yaw_ratio * gaze_scale_x;
+          const gaze_y = face_center_y - pitch_ratio * gaze_scale_y;
+
+          // 목표 위치 업데이트 (화면 좌표로 변환)
+          const targetX = gaze_x * window.innerWidth;
+          const targetY = gaze_y * window.innerHeight;
+
+          gazeCursor.setTarget(targetX, targetY);
+          gazeCursor.clampToBounds(window.innerWidth, window.innerHeight);
+        } else {
+          // 데이터가 없을 때 중앙으로 목표 설정
+          gazeCursor.setTarget(window.innerWidth / 2, window.innerHeight / 2);
         }
-        
-        // 애니메이션 시작
-        animate();
+      }
+
+      // 60fps 애니메이션 루프
+      function animate() {
+        // deltaTime 계산
+        const now = Date.now();
+        const deltaTime = now - lastFrameTime;
+        lastFrameTime = now;
+
+        // 시선 커서 업데이트
+        gazeCursor.update();
+
+        // 이펙트 업데이트
+        for (let i = activeEffects.length - 1; i >= 0; i--) {
+          activeEffects[i].update(deltaTime);
+
+          // 완료된 이펙트 제거
+          if (activeEffects[i].isComplete()) {
+            activeEffects.splice(i, 1);
+          }
+        }
+
+        // 캔버스 클리어
+        circleCtx.clearRect(0, 0, circleCanvas.width, circleCanvas.height);
+
+        // 시선 커서 그리기
+        gazeCursor.draw(circleCtx);
+
+        // 이펙트 그리기
+        for (const effect of activeEffects) {
+          effect.draw(circleCtx);
+        }
+
+        // 이미지 스크롤 로직
+        const mapImage = getMapImage();
+        if (mapImage && mapImage.complete && mapImage.naturalWidth > 0) {
+          const imageWidth =
+            mapImage.naturalWidth *
+            (window.innerHeight / mapImage.naturalHeight);
+          const maxScroll = (imageWidth - window.innerWidth) / 2;
+
+          if (maxScroll > 0) {
+            const edgeDirection = gazeCursor.checkEdgeProximity(
+              window.innerWidth,
+              window.innerHeight,
+              EDGE_THRESHOLD
+            );
+            const isAtLeftEdge = edgeDirection === "left";
+            const isAtRightEdge = edgeDirection === "right";
+
+            if (isAtLeftEdge || isAtRightEdge) {
+              if (edgeHoldStartTime === 0) {
+                edgeHoldStartTime = Date.now();
+              }
+
+              const holdDuration = Date.now() - edgeHoldStartTime;
+
+              if (holdDuration >= EDGE_HOLD_THRESHOLD) {
+                const scrollSpeed = 20;
+
+                if (isAtLeftEdge) {
+                  currentImageOffset = Math.min(
+                    currentImageOffset + scrollSpeed,
+                    maxScroll
+                  );
+                } else if (isAtRightEdge) {
+                  currentImageOffset = Math.max(
+                    currentImageOffset - scrollSpeed,
+                    -maxScroll
+                  );
+                }
+
+                drawBackground();
+              }
+            } else {
+              edgeHoldStartTime = 0;
+            }
+          } else {
+            currentImageOffset = 0;
+            drawBackground();
+          }
+        }
+
+        // 다음 프레임 요청
+        requestAnimationFrame(animate);
+      }
+
+      // 애니메이션 시작
+      animate();
     </script>
   </body>
 </html>

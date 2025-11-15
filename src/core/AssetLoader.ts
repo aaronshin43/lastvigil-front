@@ -8,7 +8,7 @@ export interface EffectMetadata {
   frameWidth: number;
   frameHeight: number;
   frameCount: number;
-  frameDuration: number;  // ms
+  frameDuration: number; // ms
   loop?: boolean;
   scale?: number;
 }
@@ -31,47 +31,112 @@ export interface AssetManifest {
 // 에셋 매니페스트 - 모든 에셋 경로와 메타데이터 정의
 const ASSET_MANIFEST: AssetManifest = {
   maps: {
-    graveyard: '/assets/maps/background_ingame_final_final.png',
+    graveyard: "/assets/maps/background_ingame_final_final.png",
+    graveyardNatural: "/assets/maps/background_ingame_natural.png",
+    graveyardFinal: "/assets/maps/background_ingame_final.png",
+    ingame: "/assets/maps/background_ingame.png",
+    intro: "/assets/maps/GameIntro.png",
+    road: "/assets/maps/mapRoad3.png",
   },
   sprites: {
-    zombie: '/assets/sprites/enemy_zombie.png',
-    skeleton: '/assets/sprites/enemy_skeleton.png',
+    // Skeleton
+    skeletonWalk: "/assets/sprites/Skeleton/Skeleton_walk.png",
+    skeletonHurt: "/assets/sprites/Skeleton/Skeleton_hurt.png",
+    skeletonDeath: "/assets/sprites/Skeleton/Skeleton_death.png",
+
+    // Orc
+    orcWalk: "/assets/sprites/Orc/Orc_walk.png",
+    orcHurt: "/assets/sprites/Orc/Orc_hurt.png",
+    orcDeath: "/assets/sprites/Orc/Orc_death.png",
+
+    // Slime
+    slimeWalk: "/assets/sprites/Slime/Slime_walk.png",
+    slimeHurt: "/assets/sprites/Slime/Slime_hurt.png",
+    slimeDeath: "/assets/sprites/Slime/Slime_death.png",
+
+    // Wizard
+    wizardIdle: "/assets/sprites/Wizard/Wizard_idle.png",
+    wizardAttack: "/assets/sprites/Wizard/Wizard_attack.png",
+    wizardAttack2: "/assets/sprites/Wizard/Wizard_attack2.png",
+    wizardHurt: "/assets/sprites/Wizard/Wizard_hurt.png",
+    wizardDeath: "/assets/sprites/Wizard/Wizard_death.png",
+
+    // Skeleton Archer
+    skeletonArcherWalk:
+      "/assets/sprites/Skeleton_Archor/Skeleton_Archer_walk.png",
+    skeletonArcherHurt:
+      "/assets/sprites/Skeleton_Archor/Skeleton_Archer_hurt.png",
+    skeletonArcherDeath:
+      "/assets/sprites/Skeleton_Archor/Skeleton_Archer_death.png",
   },
   vfx: {
-    explosion: {
-      path: '/assets/vfx/effect_explosion.png',
-      metadata: {
-        frameWidth: 192,
-        frameHeight: 192,
-        frameCount: 8,
-        frameDuration: 60,
-        loop: false,
-        scale: 1.5
-      }
-    },
     fireHammer: {
-      path: '/assets/vfx/FireHammerRedV1-sheet.png',
+      path: "/assets/vfx/FireHammerRedV1-sheet.png",
       metadata: {
         frameWidth: 128,
         frameHeight: 144,
         frameCount: 19,
         frameDuration: 50,
         loop: false,
-        scale: 1.5
-      }
+        scale: 1.5,
+      },
     },
-    magicCircle: {
-      path: '/assets/vfx/magic_circle.png',
+    fireSlash: {
+      path: "/assets/vfx/FireSlash-Sheet-sheet.png",
+      metadata: {
+        frameWidth: 128,
+        frameHeight: 128,
+        frameCount: 8,
+        frameDuration: 50,
+        loop: false,
+        scale: 1.5,
+      },
+    },
+    fireVortex: {
+      path: "/assets/vfx/Fire_vortex_red-sheet.png",
+      metadata: {
+        frameWidth: 192,
+        frameHeight: 192,
+        frameCount: 60,
+        frameDuration: 40,
+        loop: true,
+        scale: 1.5,
+      },
+    },
+    fireHurricane: {
+      path: "/assets/vfx/fire_hurricane_blue-sheet.png",
       metadata: {
         frameWidth: 256,
         frameHeight: 256,
-        frameCount: 1,  // 단일 이미지
-        frameDuration: 100,
+        frameCount: 60,
+        frameDuration: 40,
         loop: true,
-        scale: 1.0
-      }
-    }
-  }
+        scale: 1.5,
+      },
+    },
+    meteorShower: {
+      path: "/assets/vfx/meteor_shower-red-sheet.png",
+      metadata: {
+        frameWidth: 192,
+        frameHeight: 192,
+        frameCount: 8,
+        frameDuration: 60,
+        loop: false,
+        scale: 1.5,
+      },
+    },
+    tornado: {
+      path: "/assets/vfx/Tornado-Sheet-sheet.png",
+      metadata: {
+        frameWidth: 256,
+        frameHeight: 256,
+        frameCount: 60,
+        frameDuration: 40,
+        loop: true,
+        scale: 1.5,
+      },
+    },
+  },
 };
 
 export class AssetLoader {
@@ -82,7 +147,7 @@ export class AssetLoader {
    * 모든 에셋 로드
    */
   async loadAll(): Promise<void> {
-    console.log('에셋 로딩 시작...');
+    console.log("에셋 로딩 시작...");
 
     // 맵 이미지 로드
     for (const [key, path] of Object.entries(ASSET_MANIFEST.maps)) {
@@ -153,15 +218,17 @@ export class AssetLoader {
   /**
    * VFX 이미지와 메타데이터 함께 가져오기
    */
-  getVFXWithMetadata(name: string): { image: HTMLImageElement; metadata: EffectMetadata } | null {
+  getVFXWithMetadata(
+    name: string
+  ): { image: HTMLImageElement; metadata: EffectMetadata } | null {
     const image = this.getVFX(name);
     const metadata = this.getVFXMetadata(name);
-    
+
     if (!image || !metadata) {
       console.warn(`VFX "${name}"을 찾을 수 없습니다.`);
       return null;
     }
-    
+
     return { image, metadata };
   }
 
@@ -169,9 +236,10 @@ export class AssetLoader {
    * 로딩 진행률 (0~1)
    */
   getProgress(): number {
-    const total = Object.keys(ASSET_MANIFEST.maps).length +
-                  Object.keys(ASSET_MANIFEST.sprites).length +
-                  Object.keys(ASSET_MANIFEST.vfx).length;
+    const total =
+      Object.keys(ASSET_MANIFEST.maps).length +
+      Object.keys(ASSET_MANIFEST.sprites).length +
+      Object.keys(ASSET_MANIFEST.vfx).length;
     return this.loadedImages.size / total;
   }
 
