@@ -80,6 +80,24 @@
       #effect-test-btn:hover {
         background: #f57c00;
       }
+      #effect-selector {
+        position: fixed;
+        top: 120px;
+        right: 20px;
+        padding: 10px 15px;
+        font-size: 14px;
+        background: #fff;
+        color: #333;
+        border: 2px solid #ff9800;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 100;
+        font-weight: bold;
+        min-width: 180px;
+      }
+      #effect-selector:hover {
+        background: #f5f5f5;
+      }
     </style>
   </head>
   <body>
@@ -88,6 +106,17 @@
 
     <button id="webcam-toggle">Start Webcam</button>
     <button id="effect-test-btn">Test Effect</button>
+    <select id="effect-selector">
+      <option value="fireHammerRed">Fire Hammer (Red)</option>
+      <option value="fireSlash">Fire Slash</option>
+      <option value="fireVortexRed">Fire Vortex (Red)</option>
+      <option value="fireHurricaneBlue">Fire Hurricane (Blue)</option>
+      <option value="meteorShowerRed">Meteor Shower (Red)</option>
+      <option value="tornado">Tornado</option>
+      <option value="lightningV1">Lightning V1</option>
+      <option value="lightningV2">Lightning V2</option>
+      <option value="skyBeam">Sky Beam</option>
+    </select>
 
     <div id="canvas-container">
       <video id="video" width="640" height="480" autoplay playsinline></video>
