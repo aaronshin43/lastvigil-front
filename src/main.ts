@@ -185,8 +185,9 @@ function processServerData(response: any) {
 function setupUIEvents() {
   const webcamToggleBtn = document.getElementById('webcam-toggle') as HTMLButtonElement;
   const effectTestBtn = document.getElementById('effect-test-btn') as HTMLButtonElement;
+  const effectSelector = document.getElementById('effect-selector') as HTMLSelectElement;
 
-  console.log('🎮 UI 이벤트 설정 중...', { webcamToggleBtn, effectTestBtn });
+  console.log('🎮 UI 이벤트 설정 중...', { webcamToggleBtn, effectTestBtn, effectSelector });
 
   // 웹캠 토글
   if (webcamToggleBtn) {
@@ -203,15 +204,16 @@ function setupUIEvents() {
   }
 
   // 이펙트 테스트
-  if (effectTestBtn) {
+  if (effectTestBtn && effectSelector) {
     effectTestBtn.addEventListener('click', () => {
-      console.log('🎆 이펙트 테스트 버튼 클릭!');
+      const selectedEffect = effectSelector.value;
+      console.log(`🎆 이펙트 테스트 버튼 클릭! 선택된 이펙트: ${selectedEffect}`);
       const pos = gazeCursor.getPosition();
       console.log('현재 커서 위치:', pos);
-      createEffect(pos.x, pos.y, 'fireHammer');
+      createEffect(pos.x, pos.y, selectedEffect);
     });
   } else {
-    console.error('❌ effect-test-btn 버튼을 찾을 수 없습니다.');
+    console.error('❌ effect-test-btn 버튼 또는 effect-selector를 찾을 수 없습니다.');
   }
 }
 
