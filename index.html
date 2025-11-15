@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
   <head>
-    <title>Vultr AI Brain Test</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Last Vigil - Vultr AI Game</title>
     <style>
       body {
         margin: 0;
@@ -10,6 +12,7 @@
         position: relative;
         width: 100vw;
         height: 100vh;
+        background: #000;
       }
       #background-canvas {
         position: fixed;
@@ -18,20 +21,6 @@
         width: 100vw;
         height: 100vh;
         z-index: 0;
-      }
-      video {
-        display: none;
-      } /* 웹캠은 숨김 */
-      #canvas-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 1;
-      }
-      #canvas-container canvas {
-        display: none; /* 웹캠 캔버스만 숨김 */
       }
       #circle-canvas {
         position: fixed;
@@ -42,31 +31,16 @@
         pointer-events: none;
         z-index: 10;
       }
-      /* 주석 처리: 디버그 정보와 결과 표시 숨김 */
-      /*
-        #debug-info {
-            position: absolute;
-            top: 30px;
-            left: 10px;
-            color: white;
-            font-size: 14px;
-            font-family: Arial;
-            text-shadow: 2px 2px 4px black;
-            pointer-events: none;
-            z-index: 10;
-        }
-        #results { 
-            font-size: 2em; 
-            margin-top: 20px; 
-            border: 2px solid #555;
-            padding: 20px;
-            max-width: 800px;
-        }
-        */
-      #debug-info,
-      #results,
-      h1,
-      p {
+      #canvas-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1;
+      }
+      #canvas-container canvas,
+      video {
         display: none;
       }
       #webcam-toggle {
@@ -110,428 +84,16 @@
   </head>
   <body>
     <canvas id="background-canvas"></canvas>
+    <canvas id="circle-canvas"></canvas>
 
     <button id="webcam-toggle">Start Webcam</button>
     <button id="effect-test-btn">Test Effect</button>
 
-    <h1>Vultr AI Brain Test</h1>
-    <p>Vultr is analyzing your face...</p>
-
-    <pre id="results">{"status": "connecting..."}</pre>
-
     <div id="canvas-container">
       <video id="video" width="640" height="480" autoplay playsinline></video>
       <canvas id="canvas" width="640" height="480"></canvas>
-      <div id="debug-info"></div>
     </div>
 
-    <canvas id="circle-canvas"></canvas>
-
-    <script type="module">
-      // 모듈 임포트
-      import { Effect } from "./src/gameplay/Effect.ts";
-      import { GazeCursor } from "./src/gameplay/GazeCursor.ts";
-      import { AssetLoader } from "./src/core/AssetLoader.ts";
-
-      // ★ 중요: 'YOUR_VULTR_IP'를 실제 Vultr 서버 IP로 변경하세요!
-      const VULTR_SERVER_IP = "localhost";
-      const ws = new WebSocket(`ws://${VULTR_SERVER_IP}:8000/ws`);
-
-      const video = document.getElementById("video");
-      const canvas = document.getElementById("canvas");
-      const context = canvas.getContext("2d");
-      const resultsDisplay = document.getElementById("results");
-      const webcamToggleBtn = document.getElementById("webcam-toggle");
-      const effectTestBtn = document.getElementById("effect-test-btn");
-
-      // AssetLoader 인스턴스 생성 및 에셋 로드
-      const assetLoader = new AssetLoader();
-      let assetsLoaded = false;
-      assetLoader.loadAll().then(() => {
-        assetsLoaded = true;
-        // 배경 이미지 및 이펙트 이미지 등 로드 완료 후 초기화
-        drawBackground();
-      });
-
-      // 배경 이미지용 캔버스
-      const backgroundCanvas = document.getElementById("background-canvas");
-      const backgroundCtx = backgroundCanvas.getContext("2d");
-
-      // 배경 이미지는 AssetLoader에서 가져옴
-      function getMapImage() {
-        return assetLoader.getMap("graveyard");
-      }
-
-      // 이펙트 시스템 초기화
-      const activeEffects = [];
-      let lastFrameTime = Date.now();
-
-      // 원 그리기용 캔버스
-      const circleCanvas = document.getElementById("circle-canvas");
-      const circleCtx = circleCanvas.getContext("2d");
-
-      // GazeCursor 초기화
-      const gazeCursor = new GazeCursor({
-        radius: 55,
-        chaseSpeed: 0.08,
-        initialX: window.innerWidth / 2,
-        initialY: window.innerHeight / 2,
-      });
-
-      // 웹캠 상태 관리
-      let webcamActive = false;
-      let webcamStream = null;
-      let sendInterval = null;
-
-      // 이미지 스크롤 관리
-      let edgeHoldTimer = null;
-      let edgeHoldStartTime = 0;
-      let currentImageOffset = 0;
-      const EDGE_HOLD_THRESHOLD = 300; // 0.3초
-      const EDGE_THRESHOLD = 0.1; // 화면 10% 이내
-
-      // 배경 이미지 그리기 함수 (AssetLoader 사용)
-      function drawBackground() {
-        const mapImage = getMapImage();
-        if (mapImage && mapImage.complete && mapImage.naturalWidth > 0) {
-          const imageHeight = window.innerHeight;
-          const imageWidth =
-            mapImage.naturalWidth * (imageHeight / mapImage.naturalHeight);
-          const centerX = (window.innerWidth - imageWidth) / 2;
-
-          backgroundCtx.clearRect(
-            0,
-            0,
-            backgroundCanvas.width,
-            backgroundCanvas.height
-          );
-          backgroundCtx.drawImage(
-            mapImage,
-            centerX + currentImageOffset,
-            0,
-            imageWidth,
-            imageHeight
-          );
-        }
-      }
-
-      // 캔버스 크기를 윈도우 크기에 맞추기
-      function resizeCanvases() {
-        backgroundCanvas.width = window.innerWidth;
-        backgroundCanvas.height = window.innerHeight;
-        circleCanvas.width = window.innerWidth;
-        circleCanvas.height = window.innerHeight;
-        drawBackground();
-      }
-      resizeCanvases();
-      window.addEventListener("resize", resizeCanvases);
-
-      // AssetLoader로 로드된 후 배경 그리기
-      // (이미지 로드 완료 후 drawBackground는 loadAll().then에서 호출)
-
-      // WebSocket 이벤트 리스너
-      ws.onopen = () => {
-        console.log("Vultr 서버에 연결되었습니다.");
-        resultsDisplay.textContent = '{"status": "Connected!"}';
-      };
-
-      // 4. 서버로부터 분석 결과(JSON) 수신
-      ws.onmessage = (event) => {
-        // console.log("서버로부터 메시지 수신:", event.data);
-        const data = JSON.parse(event.data);
-
-        /* 주석 처리: 요약된 정보 표시
-            const handCount = (data.hand_landmarks && data.hand_landmarks.length) || 0;
-            const summary = {
-                hands_detected: handCount || "None",
-                face_lr: data.face_direction_lr || "N/A",
-                face_ud: data.face_direction_ud || "N/A"
-            };
-            resultsDisplay.textContent = JSON.stringify(summary, null, 2);
-            */
-
-        // 랜드마크 그리기
-        drawLandmarks(data);
-      };
-
-      ws.onerror = (error) => {
-        console.error("WebSocket 오류:", error);
-        resultsDisplay.textContent = '{"status": "Error! Check Vultr IP."}';
-      };
-
-      // 웹캠 토글 버튼 이벤트
-      webcamToggleBtn.addEventListener("click", () => {
-        if (webcamActive) {
-          stopWebcam();
-        } else {
-          startWebcam();
-        }
-      });
-
-      // 이펙트 테스트 버튼 이벤트 (AssetLoader 활용)
-      effectTestBtn.addEventListener("click", () => {
-        if (!assetsLoaded) {
-          alert("에셋이 아직 로드되지 않았습니다. 잠시만 기다려주세요.");
-          return;
-        }
-        // 현재 원(시선 커서) 위치에 이펙트 생성
-        const pos = gazeCursor.getPosition();
-        createEffect(pos.x, pos.y);
-      });
-
-      // 이펙트 생성 함수 (AssetLoader에서 이미지/메타데이터 사용)
-      function createEffect(x, y) {
-        const vfx = assetLoader.getVFXWithMetadata("fireHammer");
-        if (!vfx) return;
-        const { image, metadata } = vfx;
-        const effect = new Effect({
-          x: x,
-          y: y,
-          image: image,
-          frameWidth: metadata.frameWidth,
-          frameHeight: metadata.frameHeight,
-          frameCount: metadata.frameCount,
-          frameDuration: metadata.frameDuration,
-          loop: metadata.loop,
-          scale: metadata.scale,
-        });
-        activeEffects.push(effect);
-      }
-
-      // 웹캠 시작 함수
-      function startWebcam() {
-        navigator.mediaDevices
-          .getUserMedia({ video: true })
-          .then((stream) => {
-            webcamStream = stream;
-            video.srcObject = stream;
-            video.onloadedmetadata = () => {
-              webcamActive = true;
-              webcamToggleBtn.textContent = "Stop Webcam";
-              webcamToggleBtn.classList.add("active");
-
-              // 프레임 전송 시작
-              sendInterval = setInterval(() => {
-                sendFrameToServer();
-              }, 50); // 50ms = 20fps
-            };
-          })
-          .catch((err) => {
-            console.error("웹캠 오류:", err);
-            alert("웹캠을 활성화할 수 없습니다.");
-          });
-      }
-
-      // 웹캠 중지 함수
-      function stopWebcam() {
-        if (webcamStream) {
-          webcamStream.getTracks().forEach((track) => track.stop());
-          webcamStream = null;
-        }
-        if (sendInterval) {
-          clearInterval(sendInterval);
-          sendInterval = null;
-        }
-        video.srcObject = null;
-        webcamActive = false;
-        webcamToggleBtn.textContent = "Start Webcam";
-        webcamToggleBtn.classList.remove("active");
-
-        // 커서를 중앙으로 리셋
-        gazeCursor.setPosition(window.innerWidth / 2, window.innerHeight / 2);
-
-        // 이미지 오프셋 리셋
-        currentImageOffset = 0;
-        edgeHoldStartTime = 0;
-      }
-
-      /* 주석 처리: 자동 웹캠 시작
-        // 웹캠 켜기
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                video.srcObject = stream;
-                video.onloadedmetadata = () => {
-                    // 3. 0.1초마다 (10fps) 웹캠 프레임을 Vultr로 전송
-                    setInterval(() => {
-                        sendFrameToServer();
-                    }, 50); // 50ms = 20fps
-                };
-            })
-            .catch(err => {
-                console.error("웹캠 오류:", err);
-                resultsDisplay.textContent = '{"status": "Webcam Error!"}';
-            });
-        */
-
-      // 프레임을 서버로 전송하는 함수
-      function sendFrameToServer() {
-        if (ws.readyState === WebSocket.OPEN) {
-          // 비디오 프레임을 캔버스에 그리기
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          // 캔버스 이미지를 Base64 (JPEG) 텍스트로 변환 (품질 0.7)
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-
-          // WebSocket으로 텍스트 전송
-          ws.send(dataUrl);
-        }
-      }
-
-      // 랜드마크 데이터를 처리하여 목표 위치 업데이트
-      function drawLandmarks(response) {
-        const debugInfo = document.getElementById("debug-info");
-
-        const data = response.face_key_points;
-
-        // 새로운 데이터 구조: 주요 포인트 좌표
-        if (
-          data.nose_tip &&
-          data.chin &&
-          data.forehead &&
-          data.left_face &&
-          data.right_face &&
-          data.left_eye &&
-          data.right_eye
-        ) {
-          const nose_tip = data.nose_tip;
-          const chin = data.chin;
-          const forehead = data.forehead;
-          const left_face = data.left_face;
-          const right_face = data.right_face;
-          const left_eye = data.left_eye;
-          const right_eye = data.right_eye;
-
-          // 2. 얼굴 중심점 (양쪽 눈 중간)
-          const face_center_x = (left_eye.x + right_eye.x) / 2;
-          const face_center_y = (left_eye.y + right_eye.y) / 2;
-
-          // 3. Yaw (좌우 회전) 계산
-          const left_distance = Math.abs(nose_tip.x - left_face.x);
-          const right_distance = Math.abs(nose_tip.x - right_face.x);
-          const face_width = Math.abs(right_face.x - left_face.x);
-
-          let yaw_ratio = 0.0;
-          if (face_width > 0) {
-            yaw_ratio = (left_distance - right_distance) / face_width;
-          }
-
-          // 4. Pitch (상하 회전) 계산
-          const nose_to_forehead = Math.abs(nose_tip.y - forehead.y);
-          const nose_to_chin = Math.abs(nose_tip.y - chin.y);
-          const face_height = Math.abs(chin.y - forehead.y);
-
-          let pitch_ratio = 0.0;
-          if (face_height > 0) {
-            pitch_ratio =
-              (nose_to_chin - nose_to_forehead) / face_height + 0.15;
-          }
-
-          // 5. 시선 좌표 매핑 (확장 배율 적용)
-          const gaze_scale_x = 1.5; // 좌우 확장 배율
-          const gaze_scale_y = 6.0; // 상하 확장 배율
-
-          const gaze_x = face_center_x - yaw_ratio * gaze_scale_x;
-          const gaze_y = face_center_y - pitch_ratio * gaze_scale_y;
-
-          // 목표 위치 업데이트 (화면 좌표로 변환)
-          const targetX = gaze_x * window.innerWidth;
-          const targetY = gaze_y * window.innerHeight;
-
-          gazeCursor.setTarget(targetX, targetY);
-          gazeCursor.clampToBounds(window.innerWidth, window.innerHeight);
-        } else {
-          // 데이터가 없을 때 중앙으로 목표 설정
-          gazeCursor.setTarget(window.innerWidth / 2, window.innerHeight / 2);
-        }
-      }
-
-      // 60fps 애니메이션 루프
-      function animate() {
-        // deltaTime 계산
-        const now = Date.now();
-        const deltaTime = now - lastFrameTime;
-        lastFrameTime = now;
-
-        // 시선 커서 업데이트
-        gazeCursor.update();
-
-        // 이펙트 업데이트
-        for (let i = activeEffects.length - 1; i >= 0; i--) {
-          activeEffects[i].update(deltaTime);
-
-          // 완료된 이펙트 제거
-          if (activeEffects[i].isComplete()) {
-            activeEffects.splice(i, 1);
-          }
-        }
-
-        // 캔버스 클리어
-        circleCtx.clearRect(0, 0, circleCanvas.width, circleCanvas.height);
-
-        // 시선 커서 그리기
-        gazeCursor.draw(circleCtx);
-
-        // 이펙트 그리기
-        for (const effect of activeEffects) {
-          effect.draw(circleCtx);
-        }
-
-        // 이미지 스크롤 로직
-        const mapImage = getMapImage();
-        if (mapImage && mapImage.complete && mapImage.naturalWidth > 0) {
-          const imageWidth =
-            mapImage.naturalWidth *
-            (window.innerHeight / mapImage.naturalHeight);
-          const maxScroll = (imageWidth - window.innerWidth) / 2;
-
-          if (maxScroll > 0) {
-            const edgeDirection = gazeCursor.checkEdgeProximity(
-              window.innerWidth,
-              window.innerHeight,
-              EDGE_THRESHOLD
-            );
-            const isAtLeftEdge = edgeDirection === "left";
-            const isAtRightEdge = edgeDirection === "right";
-
-            if (isAtLeftEdge || isAtRightEdge) {
-              if (edgeHoldStartTime === 0) {
-                edgeHoldStartTime = Date.now();
-              }
-
-              const holdDuration = Date.now() - edgeHoldStartTime;
-
-              if (holdDuration >= EDGE_HOLD_THRESHOLD) {
-                const scrollSpeed = 20;
-
-                if (isAtLeftEdge) {
-                  currentImageOffset = Math.min(
-                    currentImageOffset + scrollSpeed,
-                    maxScroll
-                  );
-                } else if (isAtRightEdge) {
-                  currentImageOffset = Math.max(
-                    currentImageOffset - scrollSpeed,
-                    -maxScroll
-                  );
-                }
-
-                drawBackground();
-              }
-            } else {
-              edgeHoldStartTime = 0;
-            }
-          } else {
-            currentImageOffset = 0;
-            drawBackground();
-          }
-        }
-
-        // 다음 프레임 요청
-        requestAnimationFrame(animate);
-      }
-
-      // 애니메이션 시작
-      animate();
-    </script>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
