@@ -86,7 +86,7 @@ const ASSET_MANIFEST: AssetManifest = {
       metadata: {
         frameWidth: 128,
         frameHeight: 128,
-        frameCount: 8,
+        frameCount: 19,
         frameDuration: 50,
         loop: false,
         scale: 1.5,
@@ -95,9 +95,9 @@ const ASSET_MANIFEST: AssetManifest = {
     fireVortex: {
       path: "/assets/vfx/Fire_vortex_red-sheet.png",
       metadata: {
-        frameWidth: 192,
-        frameHeight: 192,
-        frameCount: 60,
+        frameWidth: 96,
+        frameHeight: 144,
+        frameCount: 27,
         frameDuration: 40,
         loop: true,
         scale: 1.5,
@@ -106,10 +106,10 @@ const ASSET_MANIFEST: AssetManifest = {
     fireHurricane: {
       path: "/assets/vfx/fire_hurricane_blue-sheet.png",
       metadata: {
-        frameWidth: 256,
-        frameHeight: 256,
-        frameCount: 60,
-        frameDuration: 40,
+        frameWidth: 128,
+        frameHeight: 100,
+        frameCount: 17,
+        frameDuration: 60,
         loop: true,
         scale: 1.5,
       },
@@ -128,10 +128,10 @@ const ASSET_MANIFEST: AssetManifest = {
     tornado: {
       path: "/assets/vfx/Tornado-Sheet-sheet.png",
       metadata: {
-        frameWidth: 256,
-        frameHeight: 256,
-        frameCount: 60,
-        frameDuration: 40,
+        frameWidth: 105,
+        frameHeight: 100,
+        frameCount: 14,
+        frameDuration: 60,
         loop: true,
         scale: 1.5,
       },
