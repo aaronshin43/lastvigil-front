@@ -161,7 +161,7 @@
     <canvas id="circle-canvas"></canvas>
 
     <!-- all.png 이미지 -->
-    <img id="all-image" src="./public/assets/maps/all.png" alt="All Skills" />
+    <img id="all-image" src="./public/assets/maps/asl_example.png" alt="All Skills" />
 
     <!-- 게임 UI -->
     <div id="game-ui">
@@ -175,6 +175,11 @@
       <div id="wave">Wave: 1</div>
       <div id="gold">Gold: 0</div>
       <div id="enemies-count">Enemies: 0</div>
+    </div>
+
+    <!-- 제스처 시퀀스 UI -->
+    <div id="gesture-sequence-ui" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 150; text-align: center;">
+      <div id="gesture-sequence" style="font-size: 72px; font-weight: bold; color: #FFD700; text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 215, 0, 0.5); letter-spacing: 20px; font-family: 'Arial Black', sans-serif;"></div>
     </div>
 
     <button id="webcam-toggle">Start Webcam</button>
