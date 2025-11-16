@@ -117,9 +117,9 @@ const ASSET_MANIFEST: AssetManifest = {
     meteorShowerRed: {
       path: "/assets/vfx/meteor_shower-red-sheet.png",
       metadata: {
-        frameWidth: 192,
+        frameWidth: 253,
         frameHeight: 192,
-        frameCount: 8,
+        frameCount: 24,
         frameDuration: 60,
         loop: false,
         scale: 1.5,
@@ -139,9 +139,9 @@ const ASSET_MANIFEST: AssetManifest = {
     lightningV1: {
       path: "/assets/vfx/lightning_v1-sheet.png",
       metadata: {
-        frameWidth: 128,
-        frameHeight: 192,
-        frameCount: 8,
+        frameWidth: 64,
+        frameHeight: 156,
+        frameCount: 17,
         frameDuration: 50,
         loop: false,
         scale: 1.5,
@@ -150,8 +150,8 @@ const ASSET_MANIFEST: AssetManifest = {
     lightningV2: {
       path: "/assets/vfx/lightning_v2-sheet.png",
       metadata: {
-        frameWidth: 128,
-        frameHeight: 192,
+        frameWidth: 64,
+        frameHeight: 256,
         frameCount: 8,
         frameDuration: 50,
         loop: false,
@@ -161,9 +161,9 @@ const ASSET_MANIFEST: AssetManifest = {
     skyBeam: {
       path: "/assets/vfx/sky_beam-sheet.png",
       metadata: {
-        frameWidth: 192,
+        frameWidth: 64,
         frameHeight: 256,
-        frameCount: 10,
+        frameCount: 20,
         frameDuration: 60,
         loop: false,
         scale: 1.5,
