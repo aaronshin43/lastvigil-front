@@ -133,6 +133,25 @@
         background: #1976d2;
       }
 
+      /* 스킬 건너뛰기 버튼 */
+      #skip-gesture-btn {
+        position: fixed;
+        top: 220px;
+        right: 20px;
+        padding: 15px 30px;
+        font-size: 16px;
+        background: #9c27b0;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 100;
+        font-weight: bold;
+      }
+      #skip-gesture-btn:hover {
+        background: #7b1fa2;
+      }
+
       /* 게임 UI */
       #game-ui {
         position: fixed;
@@ -152,33 +171,18 @@
     </style>
   </head>
   <body>
-    <!-- 랜딩 화면 캔버스 -->
-    <canvas
-      id="landing-canvas"
-      style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 1000;
-      "
-    ></canvas>
-
-    <!-- 게임 오버 화면 캔버스 -->
-    <canvas
-      id="gameover-canvas"
-      style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 999;
-        display: none;
-      "
-    ></canvas>
-
+    <!-- 랜딩 화면 캠버스 -->
+    <canvas id="landing-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000;"></canvas>
+    
+    <!-- 카운트다운 화면 캠버스 -->
+    <canvas id="countdown-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 999; display: none;"></canvas>
+    
+    <!-- 게임 오버 화면 캠버스 -->
+    <canvas id="gameover-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 998; display: none;"></canvas>
+    
+    <!-- 게임 오버 화면 캠버스 -->
+    <canvas id="gameover-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 998; display: none;"></canvas>
+    
     <canvas id="background-canvas"></canvas>
     <canvas id="circle-canvas"></canvas>
 

@@ -10,6 +10,7 @@ import { Game } from "./core/Game";
 import { Network } from "./services/Network";
 import { Camera } from "./core/Camera";
 import { LandingScreen } from "./core/LandingScreen";
+import { CountdownScreen } from "./core/CountdownScreen";
 import { GameOverScreen } from "./core/GameOverScreen";
 
 // 전역 상태 관리
@@ -20,6 +21,7 @@ let game: Game;
 let network: Network;
 let camera: Camera;
 let landingScreen: LandingScreen;
+let countdownScreen: CountdownScreen;
 let gameOverScreen: GameOverScreen;
 
 // 웹캠 관리
@@ -33,6 +35,13 @@ const EDGE_HOLD_THRESHOLD = 300; // 0.3초
 const EDGE_THRESHOLD = 0.1; // 화면 10% 이내
 const MIN_SCROLL_SPEED = 10; // 최소 스크롤 속도
 const MAX_SCROLL_SPEED = 50; // 최대 스크롤 속도
+
+// 웨이브 추적
+let currentWave = 0; // 0으로 초기화하여 첫 웨이브도 감지
+let isShowingWaveAnnouncement = false; // 웨이브 공지 표시 중인지 확인
+
+// 게임 초기화 상태
+let isGameInitialized = false;
 
 /**
  * 애플리케이션 초기화
@@ -84,12 +93,35 @@ async function init() {
  * 게임 시작 (랜딩 화면에서 Start 버튼 클릭 시)
  */
 function startGame() {
-  console.log("🚀 게임 시작!");
+  console.log("🚀 게임 시작 준비!");
 
   // 랜딩 화면 숨기기
   landingScreen.hide();
 
+  // 카운트다운 화면 초기화 및 시작
+  countdownScreen = new CountdownScreen({
+    canvasId: "countdown-canvas",
+  });
+  
+  countdownScreen.startInitialCountdown(() => {
+    console.log("⏱️ 카운트다운 완료! 실제 게임 시작");
+    initializeGame();
+  });
+}
+
+/**
+ * 실제 게임 초기화 (카운트다운 후)
+ */
+function initializeGame() {
+  // 이미 초기화되었다면 중복 실행 방지
+  if (isGameInitialized) {
+    console.warn("⚠️ 게임이 이미 초기화되어 있습니다. 중복 초기화 방지.");
+    return;
+  }
+
   try {
+    console.log("🎮 게임 초기화 시작...");
+    
     // 3. Camera 초기화
     camera = new Camera({
       worldWidth: 2148, // 백엔드 맵 크기
@@ -143,7 +175,9 @@ function startGame() {
     // 11. 맵 스크롤 로직 시작
     startScrollLoop();
 
-    console.log("✅ 게임 루프 시작 완료!");
+    // 초기화 완료 플래그 설정
+    isGameInitialized = true;
+    console.log("✅ 게임 초기화 완료!");
   } catch (error) {
     console.error("❌ 게임 시작 실패:", error);
     alert("게임 시작에 실패했습니다. 콘솔을 확인하세요.");
@@ -246,6 +280,26 @@ function processServerData(response: any) {
       renderer.playAttackAnimation();
     }
 
+    // 웨이브 변경 감지 (증가할 때만 표시하고, 중복 방지)
+    if (response.gameState.waveNumber && 
+        response.gameState.waveNumber > currentWave && 
+        !isShowingWaveAnnouncement) {
+      console.log(`🌊 웨이브 변경: ${currentWave} → ${response.gameState.waveNumber}`);
+      const newWave = response.gameState.waveNumber;
+      currentWave = newWave;
+      
+      // 첫 웨이브는 이미 초기 카운트다운에서 표시했으므로 스킵
+      if (newWave > 1) {
+        isShowingWaveAnnouncement = true;
+        countdownScreen.showWaveAnnouncement(newWave);
+        
+        // 1.5초 후 플래그 리셋 (애니메이션 duration과 동일)
+        setTimeout(() => {
+          isShowingWaveAnnouncement = false;
+        }, 1500);
+      }
+    }
+
     // Game 클래스에 전달하여 렌더링
     game.updateGameState(response.gameState);
   }
@@ -286,6 +340,12 @@ function setupUIEvents() {
   const skillGuideToggleBtn = document.getElementById(
     "skill-guide-toggle"
   ) as HTMLButtonElement;
+  const skipGestureBtn = document.getElementById(
+    "skip-gesture-btn"
+  ) as HTMLButtonElement;
+  const skipButtonImg = document.getElementById(
+    "skip-button"
+  ) as HTMLImageElement;
   const allImage = document.getElementById("all-image") as HTMLImageElement;
 
   console.log("🎮 UI 이벤트 설정 중...", {
@@ -293,6 +353,8 @@ function setupUIEvents() {
     effectTestBtn,
     effectSelector,
     skillGuideToggleBtn,
+    skipGestureBtn,
+    skipButtonImg,
   });
 
   // 웹캠 토글
@@ -354,6 +416,36 @@ function setupUIEvents() {
     console.error(
       "❌ skill-guide-toggle 버튼 또는 all-image를 찾을 수 없습니다."
     );
+  }
+
+  // 스킬 건너뛰기 버튼 (기존 버튼)
+  if (skipGestureBtn) {
+    skipGestureBtn.addEventListener("click", () => {
+      console.log("⏭️ 스킬 건너뛰기 요청");
+      if (network && network.isConnected()) {
+        network.send(JSON.stringify({ type: "skipGesture" }));
+        console.log("📤 skipGesture 메시지 전송");
+      } else {
+        console.warn("⚠️ 서버에 연결되지 않았습니다.");
+      }
+    });
+  } else {
+    console.error("❌ skip-gesture-btn 버튼을 찾을 수 없습니다.");
+  }
+
+  // 새 스킵 버튼 이미지
+  if (skipButtonImg) {
+    skipButtonImg.addEventListener("click", () => {
+      console.log("⏭️ 스킬 건너뛰기 요청 (이미지 버튼)");
+      if (network && network.isConnected()) {
+        network.send(JSON.stringify({ type: "skipGesture" }));
+        console.log("📤 skipGesture 메시지 전송");
+      } else {
+        console.warn("⚠️ 서버에 연결되지 않았습니다.");
+      }
+    });
+  } else {
+    console.error("❌ skip-button 이미지를 찾을 수 없습니다.");
   }
 }
 
