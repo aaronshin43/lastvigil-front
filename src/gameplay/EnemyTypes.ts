@@ -351,40 +351,40 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
   },
 
   // ========== Tier 4: 보스 ==========
-  dragon: {
-    id: "dragon",
-    name: "드래곤",
-    sprites: {
-      walk: {
-        path: "/assets/sprites/Dragon/Dragon_walk.png",
-        frameWidth: 128,
-        frameHeight: 128,
-        frameCount: 4,
-        frameDuration: 200,
-      },
-      hurt: {
-        path: "/assets/sprites/Dragon/Dragon_hurt.png",
-        frameWidth: 128,
-        frameHeight: 128,
-        frameCount: 2,
-        frameDuration: 150,
-      },
-      death: {
-        path: "/assets/sprites/Dragon/Dragon_death.png",
-        frameWidth: 128,
-        frameHeight: 128,
-        frameCount: 4,
-        frameDuration: 200,
-      },
-    },
-    stats: {
-      maxHP: 1000,
-      speed: 30,
-      damage: 50,
-      goldReward: 200,
-      scale: 2.0,
-    },
-  },
+  // dragon: {
+  //   id: "dragon",
+  //   name: "드래곤",
+  //   sprites: {
+  //     walk: {
+  //       path: "/assets/sprites/Dragon/Dragon_walk.png",
+  //       frameWidth: 128,
+  //       frameHeight: 128,
+  //       frameCount: 4,
+  //       frameDuration: 200,
+  //     },
+  //     hurt: {
+  //       path: "/assets/sprites/Dragon/Dragon_hurt.png",
+  //       frameWidth: 128,
+  //       frameHeight: 128,
+  //       frameCount: 2,
+  //       frameDuration: 150,
+  //     },
+  //     death: {
+  //       path: "/assets/sprites/Dragon/Dragon_death.png",
+  //       frameWidth: 128,
+  //       frameHeight: 128,
+  //       frameCount: 4,
+  //       frameDuration: 200,
+  //     },
+  //   },
+  //   stats: {
+  //     maxHP: 1000,
+  //     speed: 30,
+  //     damage: 50,
+  //     goldReward: 200,
+  //     scale: 2.0,
+  //   },
+  // },
 };
 
 /**

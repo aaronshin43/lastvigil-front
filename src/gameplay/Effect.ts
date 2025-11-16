@@ -4,17 +4,7 @@
  * 폭발, 마법진 등의 VFX를 캔버스에 렌더링
  */
 
-export interface EffectConfig {
-  x: number; // 이펙트 중심 X 좌표
-  y: number; // 이펙트 중심 Y 좌표
-  image: HTMLImageElement; // 스프라이트시트 이미지
-  frameWidth: number; // 스프라이트 한 프레임의 너비
-  frameHeight: number; // 스프라이트 한 프레임의 높이
-  frameCount: number; // 총 프레임 수
-  frameDuration: number; // 각 프레임 지속 시간 (ms)
-  loop?: boolean; // 반복 재생 여부 (기본: false)
-  scale?: number; // 스케일 (기본: 1)
-}
+import type { VFXMetadata } from "./VFXTypes";
 
 export class Effect {
   private x: number;
@@ -31,16 +21,21 @@ export class Effect {
   private elapsedTime: number = 0;
   private isFinished: boolean = false;
 
-  constructor(config: EffectConfig) {
-    this.x = config.x;
-    this.y = config.y;
-    this.image = config.image;
-    this.frameWidth = config.frameWidth;
-    this.frameHeight = config.frameHeight;
-    this.frameCount = config.frameCount;
-    this.frameDuration = config.frameDuration;
-    this.loop = config.loop ?? false;
-    this.scale = config.scale ?? 1;
+  constructor(
+    x: number,
+    y: number,
+    image: HTMLImageElement,
+    metadata: VFXMetadata
+  ) {
+    this.x = x;
+    this.y = y;
+    this.image = image;
+    this.frameWidth = metadata.frameWidth;
+    this.frameHeight = metadata.frameHeight;
+    this.frameCount = metadata.frameCount;
+    this.frameDuration = metadata.frameDuration;
+    this.loop = metadata.loop ?? false;
+    this.scale = metadata.scale ?? 1;
   }
 
   /**

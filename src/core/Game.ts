@@ -189,17 +189,7 @@ export class Game {
       return null;
     }
 
-    return new Effect({
-      x,
-      y,
-      image: vfxData.image,
-      frameWidth: vfxData.metadata.frameWidth,
-      frameHeight: vfxData.metadata.frameHeight,
-      frameCount: vfxData.metadata.frameCount,
-      frameDuration: vfxData.metadata.frameDuration,
-      loop: vfxData.metadata.loop || false,
-      scale: vfxData.metadata.scale || 1.0,
-    });
+    return new Effect(x, y, vfxData.image, vfxData.metadata);
   }
 
   /**
