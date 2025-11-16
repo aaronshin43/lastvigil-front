@@ -22,9 +22,9 @@ export interface GameStateData {
     type: string;
     x: number; // 정규화된 x 좌표 (0.0~1.0)
   }[];
+  playerHP?: number; // 플레이어 HP
   playerGold?: number;
   playerScore?: number;
-  playerHP?: number;
   waveNumber?: number;
 }
 
@@ -89,8 +89,8 @@ export class Game {
     // 1. 애니메이션 업데이트 (이펙트만)
     this.updateAnimations(deltaTime);
 
-    // 2. 렌더링
-    this.render();
+    // 2. 렌더링 (deltaTime 전달)
+    this.render(deltaTime);
 
     requestAnimationFrame(this.gameLoop);
   };
@@ -103,6 +103,14 @@ export class Game {
     this.latestGameState = state;
 
     // 시선 위치는 main.ts의 processServerData()에서 처리하므로 여기서는 제거
+
+    // Witch HP 업데이트
+    if (state.playerHP !== undefined) {
+      const maxHP = 100;
+      const isDead = state.playerHP <= 0;
+
+      this.renderer.updateWitchHP(state.playerHP, maxHP, isDead);
+    }
 
     // 적 업데이트
     this.updateEnemies(state.enemies);
@@ -165,20 +173,17 @@ export class Game {
         // x: 정규화된 좌표(0~1)를 월드 좌표로 변환
         const WORLD_WIDTH = 2148; // 백엔드 맵 크기
         const worldX = effectState.x * WORLD_WIDTH;
-        
+
         // y: VFX 메타데이터의 yOffset 적용 (기본 0.7)
         const vfxMetadata = this.assetLoader.getVFXMetadata(effectState.type);
         const baseY = 0.7; // 기본 y 위치 (화면 높이의 70%)
-        const yPosition = vfxMetadata?.yOffset !== undefined 
-          ? baseY + vfxMetadata.yOffset 
-          : baseY;
+        const yPosition =
+          vfxMetadata?.yOffset !== undefined
+            ? baseY + vfxMetadata.yOffset
+            : baseY;
         const fixedY = window.innerHeight * yPosition;
-        
-        const effect = this.createEffect(
-          effectState.type,
-          worldX,
-          fixedY
-        );
+
+        const effect = this.createEffect(effectState.type, worldX, fixedY);
         if (effect) {
           (effect as any).id = effectState.id; // ID 태깅
           this.activeEffects.push(effect);
@@ -235,9 +240,9 @@ export class Game {
   /**
    * 렌더링
    */
-  private render(): void {
-    // 0. 배경 그리기 (카메라 오프셋 반영)
-    this.renderer.redrawBackground();
+  private render(deltaTime: number): void {
+    // 0. 배경 그리기 (카메라 오프셋 반영, Castle 애니메이션 업데이트)
+    this.renderer.redrawBackground(deltaTime);
 
     const ctx = this.renderer.getGameContext();
     if (!ctx) return;
@@ -323,11 +328,28 @@ export class Game {
     const waveEl = document.getElementById("wave");
     const goldEl = document.getElementById("gold");
     const enemiesEl = document.getElementById("enemies-count");
+    const witchHPEl = document.getElementById("witch-hp");
 
     if (scoreEl) scoreEl.textContent = `Score: ${score}`;
     if (waveEl) waveEl.textContent = `Wave: ${wave}`;
     if (goldEl) goldEl.textContent = `Gold: ${gold}`;
     if (enemiesEl) enemiesEl.textContent = `Enemies: ${enemyCount}`;
+
+    // Witch HP 업데이트
+    const witchState = this.renderer.getWitchState();
+    if (witchHPEl) {
+      const hpPercent = Math.round((witchState.hp / witchState.maxHP) * 100);
+      witchHPEl.textContent = `HP: ${witchState.hp}/${witchState.maxHP} (${hpPercent}%)`;
+
+      // HP에 따라 색상 변경
+      if (hpPercent > 50) {
+        witchHPEl.style.color = "#00FF00"; // 초록색
+      } else if (hpPercent > 25) {
+        witchHPEl.style.color = "#FFA500"; // 주황색
+      } else {
+        witchHPEl.style.color = "#FF0000"; // 빨간색
+      }
+    }
   }
 
   /**

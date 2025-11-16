@@ -6,6 +6,7 @@
 import type { Effect } from "../gameplay/Effect";
 import type { GazeCursor } from "../gameplay/GazeCursor";
 import type { Camera } from "./Camera";
+import { WIZARD_SPRITE } from "../gameplay/WizardTypes";
 
 export interface RendererConfig {
   backgroundCanvasId: string;
@@ -28,6 +29,18 @@ export class Renderer {
 
   // 배경 이미지
   private backgroundImage: HTMLImageElement | null = null;
+  private wizardImage: HTMLImageElement | null = null;
+
+  // Witch 상태 (고정 위치, HP만 서버로부터 받음)
+  private witchX: number = 0.01; // 정규화된 x 좌표 (고정값)
+  private witchY: number = 0.8; // 정규화된 y 좌표 (고정값)
+  private witchHP: number = 100; // 현재 HP
+  private witchMaxHP: number = 100; // 최대 HP
+  private witchIsDead: boolean = false;
+
+  // Wizard 애니메이션 상태
+  private wizardCurrentFrame: number = 0;
+  private wizardElapsedTime: number = 0;
 
   // 렌더링할 객체들 (외부에서 주입)
   private effects: Effect[] = [];
@@ -91,9 +104,30 @@ export class Renderer {
   }
 
   /**
+   * 성 이미지 설정
+   */
+  setWizardImage(image: HTMLImageElement): void {
+    this.wizardImage = image;
+    this.drawBackground();
+  }
+
+  /**
+   * Witch HP 업데이트 (서버로부터 받음, 위치는 고정)
+   */
+  updateWitchHP(currentHP: number, maxHP: number, isDead: boolean): void {
+    this.witchHP = currentHP;
+    this.witchMaxHP = maxHP;
+    this.witchIsDead = isDead;
+  }
+
+  /**
    * 배경 다시 그리기 (외부에서 호출 가능)
    */
-  public redrawBackground(): void {
+  public redrawBackground(deltaTime?: number): void {
+    // Wizard 애니메이션 업데이트
+    if (deltaTime !== undefined) {
+      this.updateWizardAnimation(deltaTime);
+    }
     this.drawBackground();
   }
 
@@ -127,11 +161,11 @@ export class Renderer {
     // 배경 이미지를 월드 크기에 맞춰 그리기
     const worldWidth = this.camera.getWorldWidth();
     const viewportHeight = this.backgroundCanvas.height;
-    
+
     // 화면을 꽉 채우도록 설정
     const imageWidth = worldWidth;
     const imageHeight = viewportHeight; // 화면 높이에 맞춤 (종횡비 무시)
-    
+
     // 카메라 오프셋 적용 (배경이 월드와 함께 스크롤)
     const cameraOffset = -this.camera.getOffsetX();
 
@@ -142,6 +176,78 @@ export class Renderer {
       imageWidth,
       imageHeight
     );
+
+    // Wizard 그리기 (서버에서 받은 witch 좌표 사용)
+    if (
+      this.wizardImage &&
+      this.wizardImage.complete &&
+      this.wizardImage.naturalWidth > 0 &&
+      !this.witchIsDead
+    ) {
+      const drawWidth = WIZARD_SPRITE.frameWidth * WIZARD_SPRITE.scale;
+      const drawHeight = WIZARD_SPRITE.frameHeight * WIZARD_SPRITE.scale;
+
+      // 서버로부터 받은 정규화된 좌표를 화면 좌표로 변환
+      const worldWidth = this.camera.getWorldWidth();
+      const worldX = this.witchX * worldWidth;
+      const worldY = this.witchY * viewportHeight;
+
+      // 월드 좌표를 화면 좌표로 변환 (카메라 오프셋 적용)
+      const wizardX = worldX + cameraOffset;
+      const wizardY = worldY - drawHeight / 2; // 중심 정렬
+
+      // 현재 프레임의 소스 좌표 계산
+      const srcX = this.wizardCurrentFrame * WIZARD_SPRITE.frameWidth;
+      const srcY = 0;
+
+      this.backgroundCtx.drawImage(
+        this.wizardImage,
+        srcX,
+        srcY,
+        WIZARD_SPRITE.frameWidth,
+        WIZARD_SPRITE.frameHeight,
+        wizardX,
+        wizardY,
+        drawWidth,
+        drawHeight
+      );
+
+      // HP 바 그리기
+      this.drawWitchHealthBar(wizardX, wizardY, drawWidth);
+    }
+  }
+
+  /**
+   * Witch HP 바 그리기
+   */
+  private drawWitchHealthBar(x: number, y: number, width: number): void {
+    const barWidth = Math.min(width * 0.8, 150); // Witch 크기의 80% 또는 최대 150px
+    const barHeight = 10;
+    const barX = x + (width - barWidth) / 2;
+    const barY = y + 230; // Witch 위쪽에 표시
+
+    // 배경 (발간)
+    this.backgroundCtx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    this.backgroundCtx.fillRect(
+      barX - 2,
+      barY - 2,
+      barWidth + 4,
+      barHeight + 4
+    );
+
+    // HP 바 배경 (빨간색)
+    this.backgroundCtx.fillStyle = "#8B0000";
+    this.backgroundCtx.fillRect(barX, barY, barWidth, barHeight);
+
+    // 현재 HP (초록색)
+    const hpRatio = Math.max(0, this.witchHP / this.witchMaxHP);
+    this.backgroundCtx.fillStyle = "#00FF00";
+    this.backgroundCtx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
+
+    // 테두리
+    this.backgroundCtx.strokeStyle = "white";
+    this.backgroundCtx.lineWidth = 2;
+    this.backgroundCtx.strokeRect(barX, barY, barWidth, barHeight);
   }
 
   /**
@@ -149,6 +255,21 @@ export class Renderer {
    */
   setEffects(effects: Effect[]): void {
     this.effects = effects;
+  }
+
+  /**
+   * Witch 상태 getter
+   */
+  getWitchState(): {
+    hp: number;
+    maxHP: number;
+    isDead: boolean;
+  } {
+    return {
+      hp: this.witchHP,
+      maxHP: this.witchMaxHP,
+      isDead: this.witchIsDead,
+    };
   }
 
   /**
@@ -206,6 +327,9 @@ export class Renderer {
     const deltaTime = now - this.lastFrameTime;
     this.lastFrameTime = now;
 
+    // Wizard 애니메이션 업데이트
+    this.updateWizardAnimation(deltaTime);
+
     // 배경 다시 그리기 (카메라 이동 반영)
     this.drawBackground();
 
@@ -233,6 +357,26 @@ export class Renderer {
     // 다음 프레임 요청
     this.animationFrameId = requestAnimationFrame(this.animate);
   };
+
+  /**
+   * Wizard 애니메이션 프레임 업데이트
+   */
+  private updateWizardAnimation(deltaTime: number): void {
+    if (!this.wizardImage) return;
+
+    this.wizardElapsedTime += deltaTime;
+
+    if (this.wizardElapsedTime >= WIZARD_SPRITE.frameDuration) {
+      this.wizardElapsedTime -= WIZARD_SPRITE.frameDuration;
+      this.wizardCurrentFrame =
+        (this.wizardCurrentFrame + 1) % WIZARD_SPRITE.frameCount;
+      console.log(
+        `🧙 Wizard frame: ${
+          this.wizardCurrentFrame
+        }, elapsed: ${this.wizardElapsedTime.toFixed(1)}ms`
+      );
+    }
+  }
 
   /**
    * 캔버스 크기 반환

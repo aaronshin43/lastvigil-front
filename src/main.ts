@@ -114,7 +114,20 @@ function startGame() {
       renderer.setBackgroundImage(backgroundImage);
     }
 
-    // 6. GazeCursor 초기화
+    // 4-1. Wizard 이미지 설정
+    const wizardImage = assetLoader.getWizard();
+    if (wizardImage) {
+      console.log(
+        "🧙 Wizard 이미지 로드됨:",
+        wizardImage.width,
+        "x",
+        wizardImage.height
+      );
+      renderer.setWizardImage(wizardImage);
+    } else {
+      console.error("❌ Wizard 이미지를 찾을 수 없습니다!");
+    }
+    // 5. GazeCursor 초기화
     gazeCursor = new GazeCursor({
       radius: 55,
       chaseSpeed: 0.08,
@@ -327,7 +340,7 @@ function setupUIEvents() {
       // 테스트용 이펙트를 게임 상태로 추가
       // 백엔드와 동일한 형식: x는 정규화된 좌표 (0~1)
       const normalizedX = pos.x / window.innerWidth;
-      
+
       const testGameState = game.getLatestGameState();
       testGameState.effects = [{
         id: `test_${Date.now()}`,
@@ -348,11 +361,15 @@ function setupUIEvents() {
     skillGuideToggleBtn.addEventListener("click", () => {
       allImage.classList.toggle("visible");
       const isVisible = allImage.classList.contains("visible");
-      skillGuideToggleBtn.textContent = isVisible ? "Hide Guide" : "Skill Guide";
+      skillGuideToggleBtn.textContent = isVisible
+        ? "Hide Guide"
+        : "Skill Guide";
       console.log(`📖 스킬 가이드 ${isVisible ? "표시" : "숨김"}`);
     });
   } else {
-    console.error("❌ skill-guide-toggle 버튼 또는 all-image를 찾을 수 없습니다.");
+    console.error(
+      "❌ skill-guide-toggle 버튼 또는 all-image를 찾을 수 없습니다."
+    );
   }
 }
 
@@ -415,7 +432,7 @@ function stopWebcam() {
   // 카메라 오프셋은 유지 (스크롤 위치 유지)
   // camera.setOffsetX(0); // 주석 처리
   edgeHoldStartTime = 0;
-  console.log('📹 Webcam stopped, camera position maintained');
+  console.log("📹 Webcam stopped, camera position maintained");
 }
 
 /**
@@ -470,21 +487,31 @@ function checkAndScrollCamera(worldX: number) {
 
     if (holdDuration >= EDGE_HOLD_THRESHOLD) {
       const maxOffset = WORLD_WIDTH - viewportWidth;
-      
+
       // 동적 스크롤 속도 계산 (고개를 많이 돌릴수록 빠르게)
       let scrollSpeed: number;
       if (isInLeftZone) {
         // 왼쪽 존: leftScrollZone에 가까울수록 빠르게
         const distanceFromZoneEdge = leftScrollZone - worldX;
-        const normalizedDistance = Math.min(distanceFromZoneEdge / scrollMargin, 1);
-        scrollSpeed = MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * normalizedDistance;
+        const normalizedDistance = Math.min(
+          distanceFromZoneEdge / scrollMargin,
+          1
+        );
+        scrollSpeed =
+          MIN_SCROLL_SPEED +
+          (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * normalizedDistance;
       } else {
         // 오른쪽 존: rightScrollZone에서 멀수록 빠르게
         const distanceFromZoneEdge = worldX - rightScrollZone;
-        const normalizedDistance = Math.min(distanceFromZoneEdge / scrollMargin, 1);
-        scrollSpeed = MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * normalizedDistance;
+        const normalizedDistance = Math.min(
+          distanceFromZoneEdge / scrollMargin,
+          1
+        );
+        scrollSpeed =
+          MIN_SCROLL_SPEED +
+          (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * normalizedDistance;
       }
-      
+
       // 카메라 이동
       if (isInLeftZone && cameraOffsetX > 0) {
         camera.moveX(-scrollSpeed); // 왼쪽으로 스크롤

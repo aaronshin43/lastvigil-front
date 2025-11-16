@@ -7,6 +7,8 @@
 import { ENEMY_TYPES } from "../gameplay/EnemyTypes";
 import { VFX_TYPES } from "../gameplay/VFXTypes";
 import type { VFXMetadata } from "../gameplay/VFXTypes";
+import { WIZARD_SPRITE } from "../gameplay/WizardTypes";
+import type { WizardMetadata } from "../gameplay/WizardTypes";
 
 export interface AssetManifest {
   maps: {
@@ -39,6 +41,9 @@ export class AssetLoader {
     for (const [key, path] of Object.entries(ASSET_MANIFEST.maps)) {
       this.loadingPromises.push(this.loadImage(`map_${key}`, path));
     }
+
+    // Wizard 스프라이트 로드
+    this.loadingPromises.push(this.loadImage("wizard", WIZARD_SPRITE.path));
 
     // VFX 이미지 로드
     await this.loadVFXSprites();
@@ -132,6 +137,20 @@ export class AssetLoader {
    */
   getVFXMetadata(name: string): VFXMetadata | null {
     return VFX_TYPES[name] || null;
+  }
+
+  /**
+   * Wizard 이미지 가져오기
+   */
+  getWizard(): HTMLImageElement | null {
+    return this.loadedImages.get("wizard") || null;
+  }
+
+  /**
+   * Wizard 메타데이터 가져오기
+   */
+  getWizardMetadata(): WizardMetadata {
+    return WIZARD_SPRITE;
   }
 
   /**
