@@ -5,13 +5,13 @@
  */
 
 export interface GazeCursorConfig {
-  radius?: number;           // 커서 반지름 (기본: 55)
-  chaseSpeed?: number;       // 추격 속도 0~1 (기본: 0.08)
-  fillColor?: string;        // 내부 채우기 색상 (기본: 반투명 검정)
-  strokeColor?: string;      // 테두리 색상 (기본: 파란색)
-  strokeWidth?: number;      // 테두리 두께 (기본: 2)
-  initialX?: number;         // 초기 X 좌표
-  initialY?: number;         // 초기 Y 좌표
+  radius?: number; // 커서 반지름 (기본: 55)
+  chaseSpeed?: number; // 추격 속도 0~1 (기본: 0.08)
+  fillColor?: string; // 내부 채우기 색상 (기본: 반투명 검정)
+  strokeColor?: string; // 테두리 색상 (기본: 파란색)
+  strokeWidth?: number; // 테두리 두께 (기본: 2)
+  initialX?: number; // 초기 X 좌표
+  initialY?: number; // 초기 Y 좌표
 }
 
 export class GazeCursor {
@@ -32,8 +32,8 @@ export class GazeCursor {
   constructor(config: GazeCursorConfig = {}) {
     this.radius = config.radius ?? 55;
     this.chaseSpeed = config.chaseSpeed ?? 0.08;
-    this.fillColor = config.fillColor ?? 'rgba(0, 0, 0, 0.1)';
-    this.strokeColor = config.strokeColor ?? '#0066FF';
+    this.fillColor = config.fillColor ?? "rgba(0, 0, 0, 0.1)";
+    this.strokeColor = config.strokeColor ?? "#0066FF";
     this.strokeWidth = config.strokeWidth ?? 2;
 
     // 초기 위치 설정
@@ -50,8 +50,14 @@ export class GazeCursor {
    */
   setTarget(x: number, y: number): void {
     // 화면 경계 제한
-    this.targetX = Math.max(this.radius, Math.min(x, window.innerWidth - this.radius));
-    this.targetY = Math.max(this.radius, Math.min(y, window.innerHeight - this.radius));
+    this.targetX = Math.max(
+      this.radius,
+      Math.min(x, window.innerWidth - this.radius)
+    );
+    this.targetY = Math.max(
+      this.radius,
+      Math.min(y, window.innerHeight - this.radius)
+    );
   }
 
   /**
@@ -135,8 +141,14 @@ export class GazeCursor {
    * @param canvasHeight 캔버스 높이
    */
   clampToBounds(canvasWidth: number, canvasHeight: number): void {
-    this.targetX = Math.max(this.radius, Math.min(this.targetX, canvasWidth - this.radius));
-    this.targetY = Math.max(this.radius, Math.min(this.targetY, canvasHeight - this.radius));
+    this.targetX = Math.max(
+      this.radius,
+      Math.min(this.targetX, canvasWidth - this.radius)
+    );
+    this.targetY = Math.max(
+      this.radius,
+      Math.min(this.targetY, canvasHeight - this.radius)
+    );
   }
 
   /**
@@ -145,14 +157,18 @@ export class GazeCursor {
    * @param threshold 가장자리 임계값 (0~1, 예: 0.1 = 10%)
    * @returns 'left', 'right', 'top', 'bottom', 또는 null
    */
-  checkEdgeProximity(canvasWidth: number, canvasHeight: number, threshold: number = 0.1): string | null {
+  checkEdgeProximity(
+    canvasWidth: number,
+    canvasHeight: number,
+    threshold: number = 0.1
+  ): string | null {
     const normalizedX = this.currentX / canvasWidth;
     const normalizedY = this.currentY / canvasHeight;
 
-    if (normalizedX < threshold) return 'left';
-    if (normalizedX > (1 - threshold)) return 'right';
-    if (normalizedY < threshold) return 'top';
-    if (normalizedY > (1 - threshold)) return 'bottom';
+    if (normalizedX < threshold) return "left";
+    if (normalizedX > 1 - threshold) return "right";
+    if (normalizedY < threshold) return "top";
+    if (normalizedY > 1 - threshold) return "bottom";
 
     return null;
   }
