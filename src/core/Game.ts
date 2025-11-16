@@ -169,8 +169,10 @@ export class Game {
   private updateEffects(
     effectStates: { id: string; type: string; x: number }[]
   ): void {
-    console.log(`🎨 이펙트 업데이트: ${effectStates.length}개 수신, 현재 ${this.activeEffects.length}개 활성`);
-    
+    console.log(
+      `🎨 이펙트 업데이트: ${effectStates.length}개 수신, 현재 ${this.activeEffects.length}개 활성`
+    );
+
     // 기존 이펙트 ID 추출
     const existingEffectIds = new Set(
       this.activeEffects.map((e) => (e as any).id).filter(Boolean)
@@ -178,8 +180,12 @@ export class Game {
 
     // 새로운 이펙트 생성
     for (const effectState of effectStates) {
-      console.log(`🔍 이펙트 체크: id=${effectState.id}, type=${effectState.type}, x=${effectState.x}, exists=${existingEffectIds.has(effectState.id)}`);
-      
+      console.log(
+        `🔍 이펙트 체크: id=${effectState.id}, type=${effectState.type}, x=${
+          effectState.x
+        }, exists=${existingEffectIds.has(effectState.id)}`
+      );
+
       if (!existingEffectIds.has(effectState.id)) {
         // x: 정규화된 좌표(0~1)를 월드 좌표로 변환
         const WORLD_WIDTH = 2148; // 백엔드 맵 크기
@@ -349,7 +355,7 @@ export class Game {
     const enemiesEl = document.getElementById("enemies-count");
     const witchHPEl = document.getElementById("witch-hp");
 
-    if (scoreEl) scoreEl.textContent = `Score: ${score}`;
+    if (scoreEl) scoreEl.textContent = `${score}`;
     if (waveEl) waveEl.textContent = `Wave: ${wave}`;
     if (goldEl) goldEl.textContent = `Gold: ${gold}`;
     if (enemiesEl) enemiesEl.textContent = `Enemies: ${enemyCount}`;
