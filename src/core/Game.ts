@@ -251,27 +251,45 @@ export class Game {
    * UI 그리기 (서버 데이터 표시)
    */
   private drawUI(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = "white";
-    ctx.font = "20px Arial";
-    ctx.textAlign = "left";
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 3;
-
     const enemyCount = this.enemies.size;
     const gold = this.latestGameState.playerGold || 0;
     const score = this.latestGameState.playerScore || 0;
     const wave = this.latestGameState.waveNumber || 1;
 
-    // 텍스트에 테두리 효과
+    // HTML UI 요소 업데이트
+    this.updateHTMLUI(score, wave, gold, enemyCount);
+
+    // 캔버스 디버그 텍스트 (우측 하단)
+    ctx.fillStyle = "white";
+    ctx.font = "16px Arial";
+    ctx.textAlign = "right";
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 2;
+
     const drawTextWithOutline = (text: string, x: number, y: number) => {
       ctx.strokeText(text, x, y);
       ctx.fillText(text, x, y);
     };
 
-    drawTextWithOutline(`Wave: ${wave}`, 20, 30);
-    drawTextWithOutline(`Gold: ${gold}`, 20, 60);
-    drawTextWithOutline(`Score: ${score}`, 20, 90);
-    drawTextWithOutline(`Enemies: ${enemyCount}`, 20, 120);
+    const rightX = ctx.canvas.width - 20;
+    drawTextWithOutline(`FPS: ${Math.round(1000 / (performance.now() - this.lastUpdateTime))}`, rightX, ctx.canvas.height - 60);
+    drawTextWithOutline(`Effects: ${this.activeEffects.length}`, rightX, ctx.canvas.height - 40);
+    drawTextWithOutline(`Enemies: ${enemyCount}`, rightX, ctx.canvas.height - 20);
+  }
+
+  /**
+   * HTML UI 요소 업데이트
+   */
+  private updateHTMLUI(score: number, wave: number, gold: number, enemyCount: number): void {
+    const scoreEl = document.getElementById('score');
+    const waveEl = document.getElementById('wave');
+    const goldEl = document.getElementById('gold');
+    const enemiesEl = document.getElementById('enemies-count');
+
+    if (scoreEl) scoreEl.textContent = `Score: ${score}`;
+    if (waveEl) waveEl.textContent = `Wave: ${wave}`;
+    if (goldEl) goldEl.textContent = `Gold: ${gold}`;
+    if (enemiesEl) enemiesEl.textContent = `Enemies: ${enemyCount}`;
   }
 
   /**
