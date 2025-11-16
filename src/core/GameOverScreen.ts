@@ -90,9 +90,9 @@ export class GameOverScreen {
   /**
    * Ease-in-out 함수
    */
-  private easeInOut(t: number): number {
-    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-  }
+  // private easeInOut(t: number): number {
+  //   return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  // }
   
   /**
    * 게임 오버 화면 그리기
