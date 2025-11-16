@@ -15,8 +15,8 @@ type AnimationState = "walk" | "hurt" | "death";
 export interface EnemyStateData {
   id: string;
   typeId: string;
-  x: number;
-  y: number;
+  x: number; // 정규화된 x 좌표 (0.0~1.0)
+  y: number; // 정규화된 y 좌표 (0.0~1.0)
   currentHP: number;
   maxHP: number;
   animationState: AnimationState;
@@ -61,8 +61,9 @@ export class Enemy {
    * 서버로부터 받은 상태로 업데이트
    */
   public updateFromServer(data: EnemyStateData): void {
-    this.x = data.x;
-    this.y = data.y;
+    // 정규화된 좌표(0~1)를 픽셀 좌표로 변환
+    this.x = data.x * window.innerWidth;
+    this.y = data.y * window.innerHeight;
     this.currentHP = data.currentHP;
     this.maxHP = data.maxHP;
     this.animationState = data.animationState;

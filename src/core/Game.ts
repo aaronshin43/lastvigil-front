@@ -19,8 +19,7 @@ export interface GameStateData {
   effects: {
     id: string;
     type: string;
-    x: number;
-    y: number;
+    x: number; // 정규화된 x 좌표 (0.0~1.0)
   }[];
   playerGold?: number;
   playerScore?: number;
@@ -144,7 +143,7 @@ export class Game {
    * 이펙트 업데이트
    */
   private updateEffects(
-    effectStates: { id: string; type: string; x: number; y: number }[]
+    effectStates: { id: string; type: string; x: number }[]
   ): void {
     // 기존 이펙트 ID 추출
     const existingEffectIds = new Set(
@@ -154,14 +153,20 @@ export class Game {
     // 새로운 이펙트 생성
     for (const effectState of effectStates) {
       if (!existingEffectIds.has(effectState.id)) {
+        // x: 정규화된 좌표(0~1)를 픽셀로 변환
+        // y: 화면 하단 60% 지점으로 고정
+        const pixelX = effectState.x * window.innerWidth;
+        const fixedY = window.innerHeight * 0.6;
+        
         const effect = this.createEffect(
           effectState.type,
-          effectState.x,
-          effectState.y
+          pixelX,
+          fixedY
         );
         if (effect) {
           (effect as any).id = effectState.id; // ID 태깅
           this.activeEffects.push(effect);
+          console.log(`✨ 이펙트 생성: ${effectState.type} at (${pixelX.toFixed(0)}, ${fixedY.toFixed(0)})`);
         }
       }
     }

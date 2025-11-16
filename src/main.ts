@@ -168,13 +168,13 @@ function processServerData(response: any) {
 
   // 3. ✨ 게임 상태 데이터 처리 (20fps로 업데이트)
   if (response.gameState) {
-    // console.log(`🎮 게임 상태 업데이트:`, {
-    //   enemies: response.gameState.enemies?.length || 0,
-    //   effects: response.gameState.effects?.length || 0,
-    //   effectsData: response.gameState.effects, // 🔍 이펙트 데이터 상세 확인
-    //   score: response.gameState.playerScore,
-    //   wave: response.gameState.waveNumber,
-    // });
+    console.log(`🎮 게임 상태 업데이트:`, {
+      enemies: response.gameState.enemies?.length || 0,
+      effects: response.gameState.effects?.length || 0,
+      effectsData: response.gameState.effects, // 🔍 이펙트 데이터 상세 확인
+      score: response.gameState.playerScore,
+      wave: response.gameState.waveNumber,
+    });
 
     // Game 클래스에 전달하여 렌더링
     game.updateGameState(response.gameState);
@@ -226,13 +226,16 @@ function setupUIEvents() {
       console.log("현재 커서 위치:", pos);
 
       // 테스트용 이펙트를 게임 상태로 추가
+      // 백엔드와 동일한 형식: x는 정규화된 좌표 (0~1)
+      const normalizedX = pos.x / window.innerWidth;
+      
       const testGameState = game.getLatestGameState();
       testGameState.effects.push({
         id: `test_${Date.now()}`,
         type: selectedEffect,
-        x: pos.x,
-        y: pos.y,
+        x: normalizedX, // 정규화된 x 좌표 (0.0~1.0)
       });
+      console.log(`📍 스킬 발동 좌표: normalizedX=${normalizedX.toFixed(3)} (픽셀: ${pos.x.toFixed(0)})`);
       game.updateGameState(testGameState);
     });
   } else {
