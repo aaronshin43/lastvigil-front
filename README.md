@@ -1,5 +1,7 @@
 # The Last Vigil
 
+**Backend Repository**: [lastvigil-back](https://github.com/aaronshin43/lastvigil-back)
+
 A 2D Gothic action defense game where players cast magic using real-time gaze tracking and ASL alphabet hand gestures via webcam. The game features a cloud-based architecture with AI analysis running on Vultr GPU servers.
 
 ## Features
