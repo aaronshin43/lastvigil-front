@@ -9,6 +9,8 @@ import { GazeCursor } from "./gameplay/GazeCursor";
 import { Game } from "./core/Game";
 import { Network } from "./services/Network";
 import { Camera } from "./core/Camera";
+import { LandingScreen } from "./core/LandingScreen";
+import { GameOverScreen } from "./core/GameOverScreen";
 
 // 전역 상태 관리
 let assetLoader: AssetLoader;
@@ -17,6 +19,8 @@ let gazeCursor: GazeCursor;
 let game: Game;
 let network: Network;
 let camera: Camera;
+let landingScreen: LandingScreen;
+let gameOverScreen: GameOverScreen;
 
 // 웹캠 관리
 let webcamActive = false;
@@ -43,7 +47,50 @@ async function init() {
     await assetLoader.loadAll();
     console.log("✅ 에셋 로딩 완료!");
 
-    // 2. Camera 초기화
+    // 2. LandingScreen 초기화 및 표시
+    landingScreen = new LandingScreen({
+      canvasId: "landing-canvas",
+      onStart: startGame,
+    });
+    
+    const landingImages = {
+      landing: assetLoader.getMap("landing")!,
+      flourishOrnament: assetLoader.getMap("flourishOrnament")!,
+      landingTitle: assetLoader.getMap("landingTitle")!,
+      startButton: assetLoader.getMap("startButton")!,
+    };
+    
+    landingScreen.setImages(landingImages);
+    landingScreen.show();
+    
+    // 3. GameOverScreen 초기화
+    gameOverScreen = new GameOverScreen({
+      canvasId: "gameover-canvas",
+      onRestart: () => {
+        console.log("🔄 게임 재시작");
+        // 페이지 새로고침으로 재시작
+        window.location.reload();
+      },
+    });
+    
+    console.log("🎬 랜딩 화면 표시");
+  } catch (error) {
+    console.error("❌ 초기화 실패:", error);
+    alert("게임 초기화에 실패했습니다. 콘솔을 확인하세요.");
+  }
+}
+
+/**
+ * 게임 시작 (랜딩 화면에서 Start 버튼 클릭 시)
+ */
+function startGame() {
+  console.log("🚀 게임 시작!");
+  
+  // 랜딩 화면 숨기기
+  landingScreen.hide();
+  
+  try {
+    // 3. Camera 초기화
     camera = new Camera({
       worldWidth: 2148, // 백엔드 맵 크기
       viewportWidth: window.innerWidth,
@@ -53,7 +100,7 @@ async function init() {
     camera.setOffsetX(0);
     console.log("📹 카메라 초기화 완료");
 
-    // 3. Renderer 초기화
+    // 4. Renderer 초기화
     renderer = new Renderer({
       backgroundCanvasId: "background-canvas",
       gameCanvasId: "circle-canvas",
@@ -61,13 +108,13 @@ async function init() {
     });
     console.log("🎨 렌더러 초기화 완료");
 
-    // 4. 배경 이미지 설정
-    const backgroundImage = assetLoader.getMap("graveyardFinal");
+    // 5. 배경 이미지 설정
+    const backgroundImage = assetLoader.getMap("graveyard");
     if (backgroundImage) {
       renderer.setBackgroundImage(backgroundImage);
     }
 
-    // 5. GazeCursor 초기화
+    // 6. GazeCursor 초기화
     gazeCursor = new GazeCursor({
       radius: 55,
       chaseSpeed: 0.08,
@@ -75,7 +122,7 @@ async function init() {
       initialY: window.innerHeight / 2,
     });
 
-    // 6. Game 초기화
+    // 7. Game 초기화
     game = new Game({
       assetLoader,
       renderer,
@@ -83,22 +130,22 @@ async function init() {
       camera,
     });
 
-    // 7. Network (WebSocket) 초기화
+    // 8. Network (WebSocket) 초기화
     initNetwork();
 
-    // 8. UI 이벤트 리스너 설정
+    // 9. UI 이벤트 리스너 설정
     setupUIEvents();
 
-    // 9. 게임 시작 (렌더링 루프)
+    // 10. 게임 시작 (렌더링 루프)
     game.start();
 
-    // 10. 맵 스크롤 로직 시작
+    // 11. 맵 스크롤 로직 시작
     startScrollLoop();
 
-    console.log("🚀 게임 시작!");
+    console.log("✅ 게임 루프 시작 완료!");
   } catch (error) {
-    console.error("❌ 초기화 실패:", error);
-    alert("게임 초기화에 실패했습니다. 콘솔을 확인하세요.");
+    console.error("❌ 게임 시작 실패:", error);
+    alert("게임 시작에 실패했습니다. 콘솔을 확인하세요.");
   }
 }
 
@@ -154,7 +201,7 @@ function processServerData(response: any) {
     const { gaze_x, gaze_y } = response.gaze;
 
     // 🔍 백엔드 원본 데이터 확인
-    console.log(`🔍 RAW backend gaze:`, response.gaze);
+    // console.log(`🔍 RAW backend gaze:`, response.gaze);
 
     // 정규화 좌표(0-1)를 월드/스크린 좌표로 변환
     const WORLD_WIDTH = 2148; // 백엔드 맵 크기
@@ -178,33 +225,53 @@ function processServerData(response: any) {
     console.log(`✋ 제스처 감지: ${response.gesture}`);
 
     // 제스처 → 스킬 매핑
-    const skillMapping: { [key: string]: string } = {
-      A: "fireSlash",
-      C: "iceBlast",
-      L: "lightningBolt",
-      S: "shadowStrike",
-    };
+    // const skillMapping: { [key: string]: string } = {
+    //   A: "fireSlash",
+    //   C: "iceBlast",
+    //   L: "lightningBolt",
+    //   S: "shadowStrike",
+    // };
 
-    const skillType = skillMapping[response.gesture];
-    if (skillType) {
-      console.log(`🔥 스킬 발동: ${skillType}`);
-      // 서버가 이미 스킬 발동을 처리하므로 여기서는 로그만
-      // 실제 이펙트는 gameState.effects에 포함되어 렌더링됨
-    }
+    // const skillType = skillMapping[response.gesture];
+    // if (skillType) {
+    //   console.log(`🔥 스킬 발동: ${skillType}`);
+    //   // 서버가 이미 스킬 발동을 처리하므로 여기서는 로그만
+    //   // 실제 이펙트는 gameState.effects에 포함되어 렌더링됨
+    // }
   }
 
   // 3. ✨ 게임 상태 데이터 처리 (20fps로 업데이트)
   if (response.gameState) {
     console.log(`🎮 게임 상태 업데이트:`, {
-      enemies: response.gameState.enemies?.length || 0,
-      effects: response.gameState.effects?.length || 0,
-      enemyData: response.gameState.enemies, // 🔍 적 데이터 상세 확인
+      // enemies: response.gameState.enemies?.length || 0,
+      // effects: response.gameState.effects?.length || 0,
+      // enemyData: response.gameState.enemies, // 🔍 적 데이터 상세 확인
       score: response.gameState.playerScore,
       wave: response.gameState.waveNumber,
+      HP: response.gameState.playerHP,
     });
 
     // Game 클래스에 전달하여 렌더링
     game.updateGameState(response.gameState);
+  }
+
+  // 4. 🎮 게임 오버 처리
+  if (response.type === "gameOver") {
+    console.log("💀 게임 오버!", {
+      finalScore: response.finalScore,
+      finalWave: response.finalWave,
+    });
+    
+    // 게임 오버 화면 표시
+    gameOverScreen.show(response.finalScore, response.finalWave);
+    
+    // 게임 루프 정지
+    game.stop();
+    
+    // 웹캠 정지
+    if (webcamActive) {
+      stopWebcam();
+    }
   }
 }
 
@@ -255,7 +322,7 @@ function setupUIEvents() {
         `🎆 이펙트 테스트 버튼 클릭! 선택된 이펙트: ${selectedEffect}`
       );
       const pos = gazeCursor.getPosition();
-      console.log("현재 커서 위치:", pos);
+      // console.log("현재 커서 위치:", pos);
 
       // 테스트용 이펙트를 게임 상태로 추가
       // 백엔드와 동일한 형식: x는 정규화된 좌표 (0~1)
@@ -267,7 +334,7 @@ function setupUIEvents() {
         type: selectedEffect,
         x: normalizedX, // 정규화된 x 좌표 (0.0~1.0)
       }];
-      console.log(`📍 스킬 발동 좌표: normalizedX=${normalizedX.toFixed(3)} (픽셀: ${pos.x.toFixed(0)})`);
+      // console.log(`📍 스킬 발동 좌표: normalizedX=${normalizedX.toFixed(3)} (픽셀: ${pos.x.toFixed(0)})`);
       game.updateGameState(testGameState);
     });
   } else {
@@ -387,8 +454,8 @@ function checkAndScrollCamera(worldX: number) {
   const isInRightZone = worldX > rightScrollZone;
 
   // 🔍 스크롤 존 디버깅 (진입 시만 로그)
-  const wasInZone = edgeHoldStartTime !== 0;
-  const nowInZone = isInLeftZone || isInRightZone;
+  // const wasInZone = edgeHoldStartTime !== 0;
+  // const nowInZone = isInLeftZone || isInRightZone;
   // if (nowInZone && !wasInZone) {
   //   console.log(`📹 Entering scroll zone: worldX=${worldX.toFixed(0)} | camera=[${cameraLeft.toFixed(0)}, ${cameraRight.toFixed(0)}] | zones=[${leftScrollZone.toFixed(0)}, ${rightScrollZone.toFixed(0)}] | ${isInLeftZone ? 'LEFT' : 'RIGHT'}`);
   // }
