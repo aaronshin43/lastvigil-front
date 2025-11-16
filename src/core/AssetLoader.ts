@@ -9,6 +9,8 @@ import { VFX_TYPES } from "../gameplay/VFXTypes";
 import type { VFXMetadata } from "../gameplay/VFXTypes";
 import { WIZARD_SPRITE } from "../gameplay/WizardTypes";
 import type { WizardMetadata } from "../gameplay/WizardTypes";
+import { MAGIC_CIRCLE_TYPES } from "../gameplay/MagicCircleTypes";
+import type { MagicCircleMetadata } from "../gameplay/MagicCircleTypes";
 
 export interface AssetManifest {
   maps: {
@@ -43,13 +45,32 @@ export class AssetLoader {
     }
 
     // Wizard 스프라이트 로드 (플레이어)
-    this.loadingPromises.push(this.loadImage("wizard_idle", "/assets/sprites/Wizard/Wizard_idle.png"));
-    this.loadingPromises.push(this.loadImage("wizard_hurt", "/assets/sprites/Wizard/Wizard_hurt.png"));
-    this.loadingPromises.push(this.loadImage("wizard_attack", "/assets/sprites/Wizard/Wizard_attack.png"));
-    this.loadingPromises.push(this.loadImage("wizard_attack2", "/assets/sprites/Wizard/Wizard_attack2.png"));
+    this.loadingPromises.push(
+      this.loadImage("wizard_idle", "/assets/sprites/Wizard/Wizard_idle.png")
+    );
+    this.loadingPromises.push(
+      this.loadImage("wizard_hurt", "/assets/sprites/Wizard/Wizard_hurt.png")
+    );
+    this.loadingPromises.push(
+      this.loadImage(
+        "wizard_attack",
+        "/assets/sprites/Wizard/Wizard_attack.png"
+      )
+    );
+    this.loadingPromises.push(
+      this.loadImage(
+        "wizard_attack2",
+        "/assets/sprites/Wizard/Wizard_attack2.png"
+      )
+    );
 
     // Wizard 스프라이트 로드 (Castle용 - 기존)
     this.loadingPromises.push(this.loadImage("wizard", WIZARD_SPRITE.path));
+
+    // Magic Circle 스프라이트 로드 (조준원용)
+    this.loadingPromises.push(
+      this.loadImage("magic_circle", MAGIC_CIRCLE_TYPES.circle1.path)
+    );
 
     // VFX 이미지 로드
     await this.loadVFXSprites();
@@ -148,7 +169,9 @@ export class AssetLoader {
   /**
    * Wizard 이미지 가져오기
    */
-  getWizard(state?: "idle" | "hurt" | "attack" | "attack2"): HTMLImageElement | null {
+  getWizard(
+    state?: "idle" | "hurt" | "attack" | "attack2"
+  ): HTMLImageElement | null {
     if (state) {
       return this.loadedImages.get(`wizard_${state}`) || null;
     }
@@ -161,6 +184,20 @@ export class AssetLoader {
    */
   getWizardMetadata(): WizardMetadata {
     return WIZARD_SPRITE;
+  }
+
+  /**
+   * Magic Circle 이미지 가져오기
+   */
+  getMagicCircle(): HTMLImageElement | null {
+    return this.loadedImages.get("magic_circle") || null;
+  }
+
+  /**
+   * Magic Circle 메타데이터 가져오기
+   */
+  getMagicCircleMetadata(): MagicCircleMetadata {
+    return MAGIC_CIRCLE_TYPES.circle1;
   }
 
   /**
@@ -202,6 +239,11 @@ export class AssetLoader {
    * 경로로 이미지 가져오기 (범용)
    */
   getImageByPath(path: string): HTMLImageElement | null {
+    // Magic Circle 경로 확인
+    if (path === MAGIC_CIRCLE_TYPES.circle1.path) {
+      return this.loadedImages.get("magic_circle") || null;
+    }
+
     // Wizard 경로 확인
     if (path === "/assets/sprites/Wizard/Wizard_idle.png") {
       return this.loadedImages.get("wizard_idle") || null;
