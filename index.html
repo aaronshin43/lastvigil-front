@@ -98,11 +98,35 @@
       #effect-selector:hover {
         background: #f5f5f5;
       }
+
+      /* 게임 UI */
+      #game-ui {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        color: white;
+        font-family: "Arial", sans-serif;
+        z-index: 100;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      }
+      #game-ui > div {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
     </style>
   </head>
   <body>
     <canvas id="background-canvas"></canvas>
     <canvas id="circle-canvas"></canvas>
+
+    <!-- 게임 UI -->
+    <div id="game-ui">
+      <div id="score">Score: 0</div>
+      <div id="wave">Wave: 1</div>
+      <div id="gold">Gold: 0</div>
+      <div id="enemies-count">Enemies: 0</div>
+    </div>
 
     <button id="webcam-toggle">Start Webcam</button>
     <button id="effect-test-btn">Test Effect</button>
