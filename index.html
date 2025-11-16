@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Last Vigil - Vultr AI Game</title>
     <!-- Google Fonts - 고전적인 세리프 폰트 -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Text:wght@400;700&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Text:wght@400;700&family=IM+Fell+English+SC&display=swap"
+      rel="stylesheet"
+    />
     <style>
       body {
         margin: 0;
@@ -67,17 +70,60 @@
   </head>
   <body>
     <!-- 랜딩 화면 캠버스 -->
-    <canvas id="landing-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000;"></canvas>
-    
+    <canvas
+      id="landing-canvas"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1000;
+      "
+    ></canvas>
+
     <!-- 카운트다운 화면 캠버스 -->
-    <canvas id="countdown-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 999; display: none;"></canvas>
-    
+    <canvas
+      id="countdown-canvas"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 999;
+        display: none;
+      "
+    ></canvas>
+
     <!-- 게임 오버 화면 캠버스 -->
-    <canvas id="gameover-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 998; display: none;"></canvas>
-    
+    <canvas
+      id="gameover-canvas"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 998;
+        display: none;
+      "
+    ></canvas>
+
     <!-- 게임 오버 화면 캠버스 -->
-    <canvas id="gameover-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 998; display: none;"></canvas>
-    
+    <canvas
+      id="gameover-canvas"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 998;
+        display: none;
+      "
+    ></canvas>
+
     <canvas id="background-canvas"></canvas>
     <canvas id="circle-canvas"></canvas>
 
@@ -179,7 +225,10 @@
     />
 
     <!-- 게임 UI -->
-    <div id="game-ui" style="font-family: 'IM Fell English SC', 'Cinzel', 'Crimson Text', serif;">
+    <div
+      id="game-ui"
+      style="font-family: 'IM Fell English SC', 'Cinzel', 'Crimson Text', serif"
+    >
       <div id="score">0</div>
     </div>
 
@@ -200,7 +249,7 @@
         style="
           font-size: 72px;
           font-weight: bold;
-          color: rgba(0,0,0);
+          color: rgba(0, 0, 0);
           text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.9),
             0 0 20px rgba(0, 0, 0, 0.5);
           letter-spacing: 50px;

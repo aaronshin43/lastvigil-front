@@ -118,7 +118,7 @@ function startGame() {
   countdownScreen = new CountdownScreen({
     canvasId: "countdown-canvas",
   });
-  
+
   countdownScreen.startInitialCountdown(() => {
     console.log("⏱️ 카운트다운 완료! 실제 게임 시작");
     // UI 요소들 다시 표시
@@ -139,7 +139,7 @@ function initializeGame() {
 
   try {
     console.log("🎮 게임 초기화 시작...");
-    
+
     // 3. Camera 초기화
     camera = new Camera({
       worldWidth: 2148, // 백엔드 맵 크기
@@ -296,10 +296,10 @@ function processServerData(response: any) {
       const sequenceText = Array.isArray(response.gameState.gestureSequence)
         ? response.gameState.gestureSequence.join("")
         : response.gameState.gestureSequence;
-      
+
       gestureSequenceElement.textContent = sequenceText;
       currentGestureSequence = response.gameState.gestureSequence;
-      
+
       // 가이드가 현재 열려있다면 업데이트
       const aslGuideContainer = document.getElementById("asl-guide-container");
       if (aslGuideContainer && aslGuideContainer.style.display === "block") {
@@ -314,18 +314,22 @@ function processServerData(response: any) {
     }
 
     // 웨이브 변경 감지 (증가할 때만 표시하고, 중복 방지)
-    if (response.gameState.waveNumber && 
-        response.gameState.waveNumber > currentWave && 
-        !isShowingWaveAnnouncement) {
-      console.log(`🌊 웨이브 변경: ${currentWave} → ${response.gameState.waveNumber}`);
+    if (
+      response.gameState.waveNumber &&
+      response.gameState.waveNumber > currentWave &&
+      !isShowingWaveAnnouncement
+    ) {
+      console.log(
+        `🌊 웨이브 변경: ${currentWave} → ${response.gameState.waveNumber}`
+      );
       const newWave = response.gameState.waveNumber;
       currentWave = newWave;
-      
+
       // 첫 웨이브는 이미 초기 카운트다운에서 표시했으므로 스킵
       if (newWave > 1) {
         isShowingWaveAnnouncement = true;
         countdownScreen.showWaveAnnouncement(newWave);
-        
+
         // 1.5초 후 플래그 리셋 (애니메이션 duration과 동일)
         setTimeout(() => {
           isShowingWaveAnnouncement = false;
@@ -370,7 +374,9 @@ function setupUIEvents() {
   const aslGuideContainer = document.getElementById(
     "asl-guide-container"
   ) as HTMLDivElement;
-  const muteButton = document.getElementById("mute-button") as HTMLButtonElement;
+  const muteButton = document.getElementById(
+    "mute-button"
+  ) as HTMLButtonElement;
 
   console.log("🎮 UI 이벤트 설정 중...", {
     skipButtonImg,
@@ -397,10 +403,10 @@ function setupUIEvents() {
   // Guide 버튼 클릭 - ASL 제스처 가이드 토글
   if (guideButton && aslGuideContainer) {
     let isGuideVisible = false;
-    
+
     guideButton.addEventListener("click", () => {
       isGuideVisible = !isGuideVisible;
-      
+
       if (isGuideVisible) {
         // 가이드 표시
         updateASLGuide();
@@ -412,14 +418,16 @@ function setupUIEvents() {
       }
     });
   } else {
-    console.error("❌ guide-button 또는 asl-guide-container를 찾을 수 없습니다.");
+    console.error(
+      "❌ guide-button 또는 asl-guide-container를 찾을 수 없습니다."
+    );
   }
 
   // Mute 버튼 클릭 - 배경 음악 음소거 토글
   if (muteButton) {
     // 초기 버튼 상태 설정
     muteButton.textContent = audioManager.getMuteState() ? "🔇" : "🔊";
-    
+
     muteButton.addEventListener("click", () => {
       audioManager.toggleMute();
       const isMuted = audioManager.getMuteState();
@@ -435,9 +443,13 @@ function setupUIEvents() {
  * ASL 제스처 가이드 업데이트 (현재 시퀀스에 맞춰)
  */
 function updateASLGuide() {
-  const aslGuideContainer = document.getElementById("asl-guide-container") as HTMLDivElement;
-  const aslGuideImages = document.getElementById("asl-guide-images") as HTMLDivElement;
-  
+  const aslGuideContainer = document.getElementById(
+    "asl-guide-container"
+  ) as HTMLDivElement;
+  const aslGuideImages = document.getElementById(
+    "asl-guide-images"
+  ) as HTMLDivElement;
+
   if (!aslGuideContainer || !aslGuideImages) {
     console.error("❌ ASL 가이드 컨테이너를 찾을 수 없습니다.");
     return;
@@ -454,7 +466,7 @@ function updateASLGuide() {
   const letters = Array.isArray(currentGestureSequence)
     ? currentGestureSequence
     : currentGestureSequence.split("");
-  
+
   // 빈 배열이면 숨김
   if (letters.length === 0) {
     console.warn("⚠️ 제스처 시퀀스가 비어있습니다.");
@@ -464,12 +476,12 @@ function updateASLGuide() {
 
   // 기존 이미지 모두 제거
   aslGuideImages.innerHTML = "";
-  
+
   console.log(`📖 ASL 가이드 생성:`, letters, `(${letters.length}개 문자)`);
-  
+
   letters.forEach((letter) => {
     const upperLetter = letter.toUpperCase();
-    
+
     const imgWrapper = document.createElement("div");
     imgWrapper.style.cssText = `
       display: flex;
@@ -502,17 +514,17 @@ function startWebcam() {
     .then((stream) => {
       webcamStream = stream;
       const video = document.getElementById("video") as HTMLVideoElement;
-      
+
       if (!video) {
         console.error("❌ video 엘리먼트를 찾을 수 없습니다.");
         return;
       }
-      
+
       video.srcObject = stream;
 
       video.onloadedmetadata = () => {
         webcamActive = true;
-        
+
         // // 버튼이 있으면 업데이트 (없어도 계속 진행)
         // const btn = document.getElementById("webcam-toggle") as HTMLButtonElement;
         // if (btn) {
@@ -525,9 +537,9 @@ function startWebcam() {
           sendFrameToServer();
         }, 50);
       };
-      
+
       // play() 명시적으로 호출 (자동 재생을 위해)
-      video.play().catch(err => {
+      video.play().catch((err) => {
         console.error("❌ 비디오 재생 실패:", err);
       });
     })
@@ -579,12 +591,12 @@ function sendFrameToServer() {
 
   const video = document.getElementById("video") as HTMLVideoElement;
   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-  
+
   if (!video || !canvas) {
     console.error("❌ video 또는 canvas 엘리먼트를 찾을 수 없습니다.");
     return;
   }
-  
+
   const context = canvas.getContext("2d");
   if (!context) {
     console.error("❌ canvas context를 가져올 수 없습니다.");
@@ -695,7 +707,7 @@ function hideGameUI() {
   const gameUI = document.getElementById("game-ui");
   const topFrame = document.getElementById("top-frame");
   const scoreImage = document.getElementById("score-image");
-  
+
   if (status2) status2.style.display = "none";
   if (guideButton) guideButton.style.display = "none";
   if (skipButton) skipButton.style.display = "none";
@@ -716,7 +728,7 @@ function showGameUI() {
   const gameUI = document.getElementById("game-ui");
   const topFrame = document.getElementById("top-frame");
   const scoreImage = document.getElementById("score-image");
-  
+
   if (status2) status2.style.display = "block";
   if (guideButton) guideButton.style.display = "block";
   if (skipButton) skipButton.style.display = "block";

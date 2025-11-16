@@ -12,10 +12,10 @@ export class AudioManager {
     this.audio = new Audio(musicPath);
     this.audio.loop = true; // 반복 재생 설정
     this.audio.volume = 0.5; // 기본 볼륨 50%
-    
+
     // 로컬 스토리지에서 음소거 상태 복원
-    const savedMuteState = localStorage.getItem('bgm_muted');
-    if (savedMuteState === 'true') {
+    const savedMuteState = localStorage.getItem("bgm_muted");
+    if (savedMuteState === "true") {
       this.isMuted = true;
       this.audio.muted = true;
     }
@@ -26,7 +26,7 @@ export class AudioManager {
    */
   play(): void {
     this.audio.play().catch((error) => {
-      console.warn('배경 음악 재생 실패:', error);
+      console.warn("배경 음악 재생 실패:", error);
       // 자동 재생이 차단된 경우, 사용자 인터랙션 후 재시도
     });
   }
@@ -52,9 +52,9 @@ export class AudioManager {
   toggleMute(): void {
     this.isMuted = !this.isMuted;
     this.audio.muted = this.isMuted;
-    
+
     // 로컬 스토리지에 상태 저장
-    localStorage.setItem('bgm_muted', this.isMuted.toString());
+    localStorage.setItem("bgm_muted", this.isMuted.toString());
   }
 
   /**
