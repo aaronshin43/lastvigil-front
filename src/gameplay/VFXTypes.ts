@@ -105,7 +105,7 @@ export const VFX_TYPES: VFXConfig = {
     frameWidth: 64,
     frameHeight: 256,
     frameCount: 20,
-    frameDuration: 60,
+    frameDuration: 30,
     loop: false,
     scale: 2.5,
     yOffset: -0.2, // 화면 70% 지점
