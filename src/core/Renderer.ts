@@ -6,13 +6,15 @@
 import type { Effect } from "../gameplay/Effect";
 import type { GazeCursor } from "../gameplay/GazeCursor";
 import type { Camera } from "./Camera";
-import { WIZARD_SPRITE } from "../gameplay/WizardTypes";
+import type { AssetLoader } from "./AssetLoader";
+import { WIZARD_SPRITES } from "../gameplay/WizardTypes";
 
 export interface RendererConfig {
   backgroundCanvasId: string;
   gameCanvasId: string;
   backgroundColor?: string;
   camera: Camera;
+  assetLoader: AssetLoader;
 }
 
 export class Renderer {
@@ -21,6 +23,7 @@ export class Renderer {
   private gameCanvas: HTMLCanvasElement;
   private gameCtx: CanvasRenderingContext2D;
   private camera: Camera;
+  private assetLoader: AssetLoader;
 
   private backgroundColor: string;
   private isRunning: boolean = false;
@@ -29,7 +32,6 @@ export class Renderer {
 
   // 배경 이미지
   private backgroundImage: HTMLImageElement | null = null;
-  private wizardImage: HTMLImageElement | null = null;
 
   // Witch 상태 (고정 위치, HP만 서버로부터 받음)
   private witchX: number = 0.01; // 정규화된 x 좌표 (고정값)
@@ -41,6 +43,8 @@ export class Renderer {
   // Wizard 애니메이션 상태
   private wizardCurrentFrame: number = 0;
   private wizardElapsedTime: number = 0;
+  private wizardAnimationState: "idle" | "hurt" | "attack" | "attack2" = "idle";
+  private previousWitchHP: number = 100; // HP 변화 감지용
 
   // 렌더링할 객체들 (외부에서 주입)
   private effects: Effect[] = [];
@@ -69,8 +73,9 @@ export class Renderer {
 
     this.backgroundColor = config.backgroundColor || "#000000";
     this.camera = config.camera;
+    this.assetLoader = config.assetLoader;
 
-    // 캔버스 크기 설정
+    // 캠버스 크기 설정
     this.resizeCanvases();
 
     // 윈도우 리사이즈 이벤트
@@ -104,20 +109,40 @@ export class Renderer {
   }
 
   /**
-   * 성 이미지 설정
-   */
-  setWizardImage(image: HTMLImageElement): void {
-    this.wizardImage = image;
-    this.drawBackground();
-  }
-
-  /**
    * Witch HP 업데이트 (서버로부터 받음, 위치는 고정)
    */
   updateWitchHP(currentHP: number, maxHP: number, isDead: boolean): void {
+    // HP가 감소하면 hurt 애니메이션 실행
+    if (currentHP < this.previousWitchHP && currentHP > 0) {
+      this.wizardAnimationState = "hurt";
+      this.wizardCurrentFrame = 0;
+      this.wizardElapsedTime = 0;
+      console.log("💥 플레이어 피격!");
+    }
+    
+    this.previousWitchHP = currentHP;
     this.witchHP = currentHP;
     this.witchMaxHP = maxHP;
     this.witchIsDead = isDead;
+  }
+
+  /**
+   * 공격 애니메이션 실행 (attack 또는 attack2 랜덤 선택)
+   */
+  playAttackAnimation(): void {
+    // 이미 공격 중이거나 hurt 애니메이션 중이면 무시
+    if (this.wizardAnimationState === "attack" || 
+        this.wizardAnimationState === "attack2" ||
+        this.wizardAnimationState === "hurt") {
+      return;
+    }
+
+    // 랜덤으로 attack 또는 attack2 선택
+    const attackType = Math.random() < 0.5 ? "attack" : "attack2";
+    this.wizardAnimationState = attackType;
+    this.wizardCurrentFrame = 0;
+    this.wizardElapsedTime = 0;
+    console.log(`⚔️ 공격 애니메이션 실행: ${attackType}`);
   }
 
   /**
@@ -178,14 +203,16 @@ export class Renderer {
     );
 
     // Wizard 그리기 (서버에서 받은 witch 좌표 사용)
+    const wizardImage = this.assetLoader.getWizard(this.wizardAnimationState);
     if (
-      this.wizardImage &&
-      this.wizardImage.complete &&
-      this.wizardImage.naturalWidth > 0 &&
+      wizardImage &&
+      wizardImage.complete &&
+      wizardImage.naturalWidth > 0 &&
       !this.witchIsDead
     ) {
-      const drawWidth = WIZARD_SPRITE.frameWidth * WIZARD_SPRITE.scale;
-      const drawHeight = WIZARD_SPRITE.frameHeight * WIZARD_SPRITE.scale;
+      const currentConfig = WIZARD_SPRITES[this.wizardAnimationState];
+      const drawWidth = currentConfig.frameWidth * currentConfig.scale;
+      const drawHeight = currentConfig.frameHeight * currentConfig.scale;
 
       // 서버로부터 받은 정규화된 좌표를 화면 좌표로 변환
       const worldWidth = this.camera.getWorldWidth();
@@ -197,15 +224,15 @@ export class Renderer {
       const wizardY = worldY - drawHeight / 2; // 중심 정렬
 
       // 현재 프레임의 소스 좌표 계산
-      const srcX = this.wizardCurrentFrame * WIZARD_SPRITE.frameWidth;
+      const srcX = this.wizardCurrentFrame * currentConfig.frameWidth;
       const srcY = 0;
 
       this.backgroundCtx.drawImage(
-        this.wizardImage,
+        wizardImage,
         srcX,
         srcY,
-        WIZARD_SPRITE.frameWidth,
-        WIZARD_SPRITE.frameHeight,
+        currentConfig.frameWidth,
+        currentConfig.frameHeight,
         wizardX,
         wizardY,
         drawWidth,
@@ -362,19 +389,38 @@ export class Renderer {
    * Wizard 애니메이션 프레임 업데이트
    */
   private updateWizardAnimation(deltaTime: number): void {
-    if (!this.wizardImage) return;
-
+    const currentConfig = WIZARD_SPRITES[this.wizardAnimationState];
     this.wizardElapsedTime += deltaTime;
 
-    if (this.wizardElapsedTime >= WIZARD_SPRITE.frameDuration) {
-      this.wizardElapsedTime -= WIZARD_SPRITE.frameDuration;
-      this.wizardCurrentFrame =
-        (this.wizardCurrentFrame + 1) % WIZARD_SPRITE.frameCount;
-      console.log(
-        `🧙 Wizard frame: ${
-          this.wizardCurrentFrame
-        }, elapsed: ${this.wizardElapsedTime.toFixed(1)}ms`
-      );
+    if (this.wizardElapsedTime >= currentConfig.frameDuration) {
+      this.wizardElapsedTime -= currentConfig.frameDuration;
+      this.wizardCurrentFrame++;
+      
+      // hurt 애니메이션이 끝나면 idle로 복귀
+      if (this.wizardAnimationState === "hurt") {
+        if (this.wizardCurrentFrame >= WIZARD_SPRITES.hurt.frameCount) {
+          this.wizardAnimationState = "idle";
+          this.wizardCurrentFrame = 0;
+        }
+      }
+      // attack 애니메이션이 끝나면 idle로 복귀
+      else if (this.wizardAnimationState === "attack") {
+        if (this.wizardCurrentFrame >= WIZARD_SPRITES.attack.frameCount) {
+          this.wizardAnimationState = "idle";
+          this.wizardCurrentFrame = 0;
+        }
+      }
+      // attack2 애니메이션이 끝나면 idle로 복귀
+      else if (this.wizardAnimationState === "attack2") {
+        if (this.wizardCurrentFrame >= WIZARD_SPRITES.attack2.frameCount) {
+          this.wizardAnimationState = "idle";
+          this.wizardCurrentFrame = 0;
+        }
+      }
+      else {
+        // idle 애니메이션 루프
+        this.wizardCurrentFrame = this.wizardCurrentFrame % currentConfig.frameCount;
+      }
     }
   }
 

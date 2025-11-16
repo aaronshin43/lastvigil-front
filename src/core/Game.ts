@@ -10,6 +10,7 @@ import { GazeCursor } from "../gameplay/GazeCursor";
 import { Effect } from "../gameplay/Effect";
 import { Enemy, type EnemyStateData } from "../gameplay/Enemy";
 import { getEnemyConfig } from "../gameplay/EnemyTypes";
+import { Player } from "../gameplay/Player";
 import type { Camera } from "./Camera";
 
 /**
@@ -44,6 +45,7 @@ export class Game {
   // 렌더링할 객체들 (서버 데이터 기반)
   private enemies: Map<string, Enemy> = new Map();
   private activeEffects: Effect[] = [];
+  private player: Player;
 
   // 게임 상태
   private isRunning: boolean = false;
@@ -60,6 +62,9 @@ export class Game {
     this.renderer = config.renderer;
     this.gazeCursor = config.gazeCursor;
     this.camera = config.camera;
+    
+    // 플레이어 초기화
+    this.player = new Player(this.assetLoader);
   }
 
   /**
@@ -104,11 +109,13 @@ export class Game {
 
     // 시선 위치는 main.ts의 processServerData()에서 처리하므로 여기서는 제거
 
-    // Witch HP 업데이트
+    // 플레이어 HP 업데이트
     if (state.playerHP !== undefined) {
       const maxHP = 100;
+      this.player.updateHP(state.playerHP, maxHP);
+      
+      // Renderer의 Witch HP도 업데이트 (UI용)
       const isDead = state.playerHP <= 0;
-
       this.renderer.updateWitchHP(state.playerHP, maxHP, isDead);
     }
 
@@ -220,6 +227,9 @@ export class Game {
   private updateAnimations(deltaTime: number): void {
     // 시선 커서 스무딩
     this.gazeCursor.update();
+    
+    // 플레이어 애니메이션 업데이트
+    this.player.update(deltaTime);
 
     // 적 애니메이션 업데이트
     for (const enemy of this.enemies.values()) {
@@ -265,11 +275,14 @@ export class Game {
     for (const effect of this.activeEffects) {
       effect.draw(ctx, this.camera);
     }
+    
+    // 3. 플레이어는 Renderer의 배경 레이어에서 그려짐 (중복 방지)
+    // this.player.draw(ctx, this.camera);
 
-    // 3. 시선 커서 그리기
+    // 4. 시선 커서 그리기
     this.gazeCursor.draw(ctx);
 
-    // 4. UI 그리기 (디버그)
+    // 5. UI 그리기 (디버그)
     this.drawUI(ctx);
   }
 

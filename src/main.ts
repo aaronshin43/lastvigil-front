@@ -105,6 +105,7 @@ function startGame() {
       backgroundCanvasId: "background-canvas",
       gameCanvasId: "circle-canvas",
       camera: camera,
+      assetLoader: assetLoader,
     });
     console.log("🎨 렌더러 초기화 완료");
 
@@ -114,20 +115,7 @@ function startGame() {
       renderer.setBackgroundImage(backgroundImage);
     }
 
-    // 4-1. Wizard 이미지 설정
-    const wizardImage = assetLoader.getWizard();
-    if (wizardImage) {
-      console.log(
-        "🧙 Wizard 이미지 로드됨:",
-        wizardImage.width,
-        "x",
-        wizardImage.height
-      );
-      renderer.setWizardImage(wizardImage);
-    } else {
-      console.error("❌ Wizard 이미지를 찾을 수 없습니다!");
-    }
-    // 5. GazeCursor 초기화
+    // 6. GazeCursor 초기화
     gazeCursor = new GazeCursor({
       radius: 55,
       chaseSpeed: 0.08,
@@ -236,6 +224,9 @@ function processServerData(response: any) {
   // 2. 제스처 데이터 처리
   if (response.hand === "DETECTED" && response.gesture) {
     console.log(`✋ 제스처 감지: ${response.gesture}`);
+
+    // 제스처 감지 시 Wizard 공격 애니메이션 실행
+    renderer.playAttackAnimation();
 
     // 제스처 → 스킬 매핑
     // const skillMapping: { [key: string]: string } = {

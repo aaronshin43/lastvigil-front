@@ -42,7 +42,13 @@ export class AssetLoader {
       this.loadingPromises.push(this.loadImage(`map_${key}`, path));
     }
 
-    // Wizard 스프라이트 로드
+    // Wizard 스프라이트 로드 (플레이어)
+    this.loadingPromises.push(this.loadImage("wizard_idle", "/assets/sprites/Wizard/Wizard_idle.png"));
+    this.loadingPromises.push(this.loadImage("wizard_hurt", "/assets/sprites/Wizard/Wizard_hurt.png"));
+    this.loadingPromises.push(this.loadImage("wizard_attack", "/assets/sprites/Wizard/Wizard_attack.png"));
+    this.loadingPromises.push(this.loadImage("wizard_attack2", "/assets/sprites/Wizard/Wizard_attack2.png"));
+
+    // Wizard 스프라이트 로드 (Castle용 - 기존)
     this.loadingPromises.push(this.loadImage("wizard", WIZARD_SPRITE.path));
 
     // VFX 이미지 로드
@@ -142,7 +148,11 @@ export class AssetLoader {
   /**
    * Wizard 이미지 가져오기
    */
-  getWizard(): HTMLImageElement | null {
+  getWizard(state?: "idle" | "hurt" | "attack" | "attack2"): HTMLImageElement | null {
+    if (state) {
+      return this.loadedImages.get(`wizard_${state}`) || null;
+    }
+    // state가 없으면 기존 wizard (Castle용)
     return this.loadedImages.get("wizard") || null;
   }
 
@@ -192,6 +202,20 @@ export class AssetLoader {
    * 경로로 이미지 가져오기 (범용)
    */
   getImageByPath(path: string): HTMLImageElement | null {
+    // Wizard 경로 확인
+    if (path === "/assets/sprites/Wizard/Wizard_idle.png") {
+      return this.loadedImages.get("wizard_idle") || null;
+    }
+    if (path === "/assets/sprites/Wizard/Wizard_hurt.png") {
+      return this.loadedImages.get("wizard_hurt") || null;
+    }
+    if (path === "/assets/sprites/Wizard/Wizard_attack.png") {
+      return this.loadedImages.get("wizard_attack") || null;
+    }
+    if (path === "/assets/sprites/Wizard/Wizard_attack2.png") {
+      return this.loadedImages.get("wizard_attack2") || null;
+    }
+
     // 맵 경로 확인
     for (const [name, mapPath] of Object.entries(ASSET_MANIFEST.maps)) {
       if (mapPath === path) {
