@@ -5,6 +5,7 @@
  */
 
 import { AssetLoader } from "../core/AssetLoader";
+import { Camera } from "../core/Camera";
 import type { EnemyTypeConfig } from "./EnemyTypes";
 
 type AnimationState = "walk" | "hurt" | "death";
@@ -15,8 +16,8 @@ type AnimationState = "walk" | "hurt" | "death";
 export interface EnemyStateData {
   id: string;
   typeId: string;
-  x: number; // 정규화된 x 좌표 (0.0~1.0)
-  y: number; // 정규화된 y 좌표 (0.0~1.0)
+  worldX: number; // 월드 좌표 x (픽셀)
+  worldY: number; // 월드 좌표 y (픽셀)
   currentHP: number;
   maxHP: number;
   animationState: AnimationState;
@@ -32,9 +33,9 @@ export class Enemy {
   public id: string;
   public typeConfig: EnemyTypeConfig;
 
-  // 서버로부터 받은 상태
-  public x: number = 0;
-  public y: number = 0;
+  // 서버로부터 받은 상태 (월드 좌표)
+  public worldX: number = 0;
+  public worldY: number = 0;
   public currentHP: number = 0;
   public maxHP: number = 0;
   public animationState: AnimationState = "walk";
@@ -66,9 +67,9 @@ export class Enemy {
    * 서버로부터 받은 상태로 업데이트
    */
   public updateFromServer(data: EnemyStateData): void {
-    // 정규화된 좌표(0~1)를 픽셀 좌표로 변환
-    this.x = data.x * window.innerWidth;
-    this.y = data.y * window.innerHeight;
+    // 서버로부터 받은 월드 좌표를 그대로 사용
+    this.worldX = data.worldX;
+    this.worldY = data.worldY;
     this.currentHP = data.currentHP;
     this.maxHP = data.maxHP;
 
@@ -120,7 +121,20 @@ export class Enemy {
   /**
    * 캔버스에 그리기
    */
-  public draw(ctx: CanvasRenderingContext2D): void {
+  public draw(ctx: CanvasRenderingContext2D, camera: Camera): void {
+    // 월드 좌표를 스크린 좌표로 변환
+    const screen = camera.worldToScreen(this.worldX, this.worldY);
+
+    // 화면 밖이면 그리지 않음 (최적화)
+    if (
+      screen.x < -200 ||
+      screen.x > window.innerWidth + 200 ||
+      screen.y < -200 ||
+      screen.y > window.innerHeight + 200
+    ) {
+      return;
+    }
+
     const spriteConfig = this.typeConfig.sprites[this.animationState];
     const image = this.assetLoader.getImageByPath(spriteConfig.path);
 
@@ -128,7 +142,7 @@ export class Enemy {
       // 이미지 로드 안됨 - 디버그용 원 그리기
       ctx.fillStyle = "red";
       ctx.beginPath();
-      ctx.arc(this.x, this.y, 20, 0, Math.PI * 2);
+      ctx.arc(screen.x, screen.y, 20, 0, Math.PI * 2);
       ctx.fill();
       return;
     }
@@ -154,26 +168,30 @@ export class Enemy {
       sy,
       frameWidth,
       frameHeight,
-      this.x - renderWidth / 2,
-      this.y - renderHeight / 2,
+      screen.x - renderWidth / 2,
+      screen.y - renderHeight / 2,
       renderWidth,
       renderHeight
     );
 
     // HP 바 그리기
     if (!this.isDead) {
-      this.drawHealthBar(ctx);
+      this.drawHealthBar(ctx, screen.x, screen.y);
     }
   }
 
   /**
    * HP 바 그리기
    */
-  private drawHealthBar(ctx: CanvasRenderingContext2D): void {
+  private drawHealthBar(
+    ctx: CanvasRenderingContext2D,
+    screenX: number,
+    screenY: number
+  ): void {
     const barWidth = 50;
     const barHeight = 5;
-    const barX = this.x - barWidth / 2;
-    const barY = this.y - 40;
+    const barX = screenX - barWidth / 2;
+    const barY = screenY - 40;
 
     // 배경 (빨강)
     ctx.fillStyle = "red";

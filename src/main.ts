@@ -108,11 +108,11 @@ function initNetwork() {
 
   network.onMessage((data) => {
     // 📡 백엔드 응답을 콘솔에 출력
-    // console.log("=".repeat(80));
-    // console.log("📡 백엔드 응답 수신:", new Date().toLocaleTimeString());
-    // console.log("=".repeat(80));
-    // console.log(JSON.stringify(data, null, 2));
-    // console.log("=".repeat(80));
+    console.log("=".repeat(80));
+    console.log("📡 백엔드 응답 수신:", new Date().toLocaleTimeString());
+    console.log("=".repeat(80));
+    console.log(JSON.stringify(data, null, 2));
+    console.log("=".repeat(80));
 
     // 서버 데이터를 Game에 전달
     processServerData(data);
@@ -168,13 +168,15 @@ function processServerData(response: any) {
 
   // 3. ✨ 게임 상태 데이터 처리 (20fps로 업데이트)
   if (response.gameState) {
-    // console.log(`🎮 게임 상태 업데이트:`, {
-    //   enemies: response.gameState.enemies?.length || 0,
-    //   effects: response.gameState.effects?.length || 0,
-    //   effectsData: response.gameState.effects, // 🔍 이펙트 데이터 상세 확인
-    //   score: response.gameState.playerScore,
-    //   wave: response.gameState.waveNumber,
-    // });
+    console.log(`🎮 게임 상태 업데이트:`, {
+      enemies: response.gameState.enemies?.length || 0,
+      effects: response.gameState.effects?.length || 0,
+      camera: response.gameState.camera,
+      enemiesData: response.gameState.enemies, // 🔍 적 데이터 상세 확인
+      effectsData: response.gameState.effects, // 🔍 이펙트 데이터 상세 확인
+      score: response.gameState.playerScore,
+      wave: response.gameState.waveNumber,
+    });
 
     // Game 클래스에 전달하여 렌더링
     game.updateGameState(response.gameState);
@@ -230,17 +232,22 @@ function setupUIEvents() {
       const pos = gazeCursor.getPosition();
       console.log("현재 커서 위치:", pos);
 
-      // 테스트용 이펙트를 게임 상태로 추가
-      // 백엔드와 동일한 형식: x는 정규화된 좌표 (0~1)
-      const normalizedX = pos.x / window.innerWidth;
-      
+      // 테스트용 이펙트를 게임 상태로 추가 (월드 좌표 사용)
+      // TODO: 실제로는 카메라 위치를 고려해야 하지만 테스트용으로 스크린 좌표를 그대로 사용
       const testGameState = game.getLatestGameState();
-      testGameState.effects = [{
-        id: `test_${Date.now()}`,
-        type: selectedEffect,
-        x: normalizedX, // 정규화된 x 좌표 (0.0~1.0)
-      }];
-      console.log(`📍 스킬 발동 좌표: normalizedX=${normalizedX.toFixed(3)} (픽셀: ${pos.x.toFixed(0)})`);
+      testGameState.effects = [
+        {
+          id: `test_${Date.now()}`,
+          type: selectedEffect,
+          worldX: pos.x, // 스크린 좌표를 임시로 월드 좌표로 사용
+          worldY: pos.y,
+        },
+      ];
+      console.log(
+        `📍 스킬 발동 좌표: worldX=${pos.x.toFixed(0)}, worldY=${pos.y.toFixed(
+          0
+        )}`
+      );
       game.updateGameState(testGameState);
     });
   } else {
@@ -254,11 +261,15 @@ function setupUIEvents() {
     skillGuideToggleBtn.addEventListener("click", () => {
       allImage.classList.toggle("visible");
       const isVisible = allImage.classList.contains("visible");
-      skillGuideToggleBtn.textContent = isVisible ? "Hide Guide" : "Skill Guide";
+      skillGuideToggleBtn.textContent = isVisible
+        ? "Hide Guide"
+        : "Skill Guide";
       console.log(`📖 스킬 가이드 ${isVisible ? "표시" : "숨김"}`);
     });
   } else {
-    console.error("❌ skill-guide-toggle 버튼 또는 all-image를 찾을 수 없습니다.");
+    console.error(
+      "❌ skill-guide-toggle 버튼 또는 all-image를 찾을 수 없습니다."
+    );
   }
 }
 
@@ -324,21 +335,6 @@ function stopWebcam() {
 }
 
 /**
- * 프레임을 서버로 전송
- */
-function sendFrameToServer() {
-  if (!network.isConnected()) return;
-
-  const video = document.getElementById("video") as HTMLVideoElement;
-  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-  const context = canvas.getContext("2d")!;
-
-  context.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-  network.send(dataUrl);
-}
-
-/**
  * 맵 스크롤 로직
  */
 function startScrollLoop() {
@@ -387,6 +383,21 @@ function startScrollLoop() {
       edgeHoldStartTime = 0;
     }
   }, 16); // ~60fps 체크
+}
+
+/**
+ * 프레임을 서버로 전송
+ */
+function sendFrameToServer() {
+  if (!network.isConnected()) return;
+
+  const video = document.getElementById("video") as HTMLVideoElement;
+  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+  const context = canvas.getContext("2d")!;
+
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+  network.send(dataUrl);
 }
 
 // 페이지 로드 시 초기화

@@ -6,6 +6,7 @@
 
 import { AssetLoader } from "./AssetLoader";
 import { Renderer } from "./Renderer";
+import { Camera } from "./Camera";
 import { GazeCursor } from "../gameplay/GazeCursor";
 import { Effect } from "../gameplay/Effect";
 import { Enemy, type EnemyStateData } from "../gameplay/Enemy";
@@ -19,8 +20,13 @@ export interface GameStateData {
   effects: {
     id: string;
     type: string;
-    x: number; // 정규화된 x 좌표 (0.0~1.0)
+    worldX: number; // 월드 좌표 x (픽셀)
+    worldY: number; // 월드 좌표 y (픽셀)
   }[];
+  camera?: {
+    worldX: number; // 카메라가 보는 월드 좌표
+    worldY: number;
+  };
   playerGold?: number;
   playerScore?: number;
   waveNumber?: number;
@@ -36,6 +42,7 @@ export class Game {
   private assetLoader: AssetLoader;
   private renderer: Renderer;
   private gazeCursor: GazeCursor;
+  private camera: Camera;
 
   // 렌더링할 객체들 (서버 데이터 기반)
   private enemies: Map<string, Enemy> = new Map();
@@ -55,6 +62,18 @@ export class Game {
     this.assetLoader = config.assetLoader;
     this.renderer = config.renderer;
     this.gazeCursor = config.gazeCursor;
+
+    // 카메라 초기화 (임시 맵 크기: 5000x1080)
+    this.camera = new Camera({
+      worldWidth: 5000,
+      worldHeight: 1080,
+      viewWidth: window.innerWidth,
+      viewHeight: window.innerHeight,
+      smoothSpeed: 1.0, // 즉시 이동 (서버 카메라와 동기화)
+    });
+
+    // 카메라 초기 위치 설정 (서버에서 첫 데이터 받으면 자동으로 업데이트됨)
+    this.camera.setTarget(window.innerWidth / 2, window.innerHeight / 2);
   }
 
   /**
@@ -96,6 +115,9 @@ export class Game {
    */
   public updateGameState(state: GameStateData): void {
     this.latestGameState = state;
+
+    // 카메라는 배경 오프셋(시선)에 따라 제어되므로 서버 카메라는 무시
+    // (서버 카메라는 자동 스크롤용이지만, 우리는 시선 기반 스크롤 사용)
 
     // 시선 위치는 main.ts의 processServerData()에서 처리하므로 여기서는 제거
 
@@ -143,7 +165,7 @@ export class Game {
    * 이펙트 업데이트
    */
   private updateEffects(
-    effectStates: { id: string; type: string; x: number }[]
+    effectStates: { id: string; type: string; worldX: number; worldY: number }[]
   ): void {
     // 기존 이펙트 ID 추출
     const existingEffectIds = new Set(
@@ -153,29 +175,21 @@ export class Game {
     // 새로운 이펙트 생성
     for (const effectState of effectStates) {
       if (!existingEffectIds.has(effectState.id)) {
-        // x: 정규화된 좌표(0~1)를 픽셀로 변환
-        const pixelX = effectState.x * window.innerWidth;
-        
-        // y: VFX 메타데이터의 yOffset 적용 (기본 0.7)
-        const vfxMetadata = this.assetLoader.getVFXMetadata(effectState.type);
-        const baseY = 0.7; // 기본 y 위치 (화면 높이의 70%)
-        const yPosition = vfxMetadata?.yOffset !== undefined 
-          ? baseY + vfxMetadata.yOffset 
-          : baseY;
-        const fixedY = window.innerHeight * yPosition;
-        
+        // 서버로부터 받은 월드 좌표를 그대로 사용
         const effect = this.createEffect(
           effectState.type,
-          pixelX,
-          fixedY
+          effectState.worldX,
+          effectState.worldY
         );
         if (effect) {
           (effect as any).id = effectState.id; // ID 태깅
           this.activeEffects.push(effect);
           console.log(
-            `✨ 이펙트 생성: ${effectState.type} at (${pixelX.toFixed(
+            `✨ 이펙트 생성: ${
+              effectState.type
+            } at (${effectState.worldX.toFixed(
               0
-            )}, ${fixedY.toFixed(0)})`
+            )}, ${effectState.worldY.toFixed(0)})`
           );
         }
       }
@@ -187,8 +201,8 @@ export class Game {
    */
   private createEffect(
     effectType: string,
-    x: number,
-    y: number
+    worldX: number,
+    worldY: number
   ): Effect | null {
     const vfxData = this.assetLoader.getVFXWithMetadata(effectType);
     if (!vfxData) {
@@ -196,7 +210,7 @@ export class Game {
       return null;
     }
 
-    return new Effect(x, y, vfxData.image, vfxData.metadata);
+    return new Effect(worldX, worldY, vfxData.image, vfxData.metadata);
   }
 
   /**
@@ -229,17 +243,28 @@ export class Game {
     const ctx = this.renderer.getGameContext();
     if (!ctx) return;
 
+    // 0. 배경 오프셋에 따라 카메라 위치 조정 (배경과 몬스터 동기화)
+    const backgroundOffset = this.renderer.getBackgroundOffset();
+    const screenCenterX = window.innerWidth / 2;
+    // 배경이 오른쪽으로 이동하면(+) 카메라도 오른쪽으로 이동
+    // 배경이 왼쪽으로 이동하면(-) 카메라도 왼쪽으로 이동
+    const adjustedCameraX = screenCenterX - backgroundOffset;
+
+    // 서버 카메라 위치 무시하고, 배경 오프셋 기반으로 카메라 설정
+    this.camera.setTarget(adjustedCameraX, window.innerHeight / 2);
+    this.camera.update();
+
     // 캔버스 클리어
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     // 1. 적 그리기 (latestGameState.enemies 기반)
     for (const enemy of this.enemies.values()) {
-      enemy.draw(ctx);
+      enemy.draw(ctx, this.camera);
     }
 
     // 2. 이펙트 그리기
     for (const effect of this.activeEffects) {
-      effect.draw(ctx);
+      effect.draw(ctx, this.camera);
     }
 
     // 3. 시선 커서 그리기
