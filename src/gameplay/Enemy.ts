@@ -89,6 +89,14 @@ export class Enemy {
   public updateAnimation(deltaTime: number): void {
     const spriteConfig = this.typeConfig.sprites[this.animationState];
 
+    // death 애니메이션이 이미 마지막 프레임에 도달했으면 업데이트하지 않음
+    if (
+      this.animationState === "death" &&
+      this.localCurrentFrame >= spriteConfig.frameCount - 1
+    ) {
+      return;
+    }
+
     this.frameTimer += deltaTime;
 
     if (this.frameTimer >= spriteConfig.frameDuration) {
@@ -127,7 +135,14 @@ export class Enemy {
 
     const frameWidth = spriteConfig.frameWidth;
     const frameHeight = spriteConfig.frameHeight;
-    const sx = this.localCurrentFrame * frameWidth; // 로컬 프레임 사용
+
+    // death 애니메이션은 역순으로 재생 (스프라이트 시트가 역순으로 되어있음)
+    let frameIndex = this.localCurrentFrame;
+    if (this.animationState === "death") {
+      frameIndex = spriteConfig.frameCount - 1 - this.localCurrentFrame;
+    }
+
+    const sx = frameIndex * frameWidth;
     const sy = 0;
 
     const renderWidth = frameWidth * this.scale;
