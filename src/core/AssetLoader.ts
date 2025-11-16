@@ -18,11 +18,10 @@ export interface AssetManifest {
 const ASSET_MANIFEST: AssetManifest = {
   maps: {
     graveyard: "/assets/maps/background_ingame_final_final.png",
-    graveyardNatural: "/assets/maps/background_ingame_natural.png",
-    graveyardFinal: "/assets/maps/background_ingame_final.png",
-    ingame: "/assets/maps/background_ingame.png",
-    intro: "/assets/maps/GameIntro.png",
-    road: "/assets/maps/mapRoad3.png",
+    landing: "/assets/maps/landing.png",
+    flourishOrnament: "/assets/maps/flourishOrnamentNoBack.png",
+    landingTitle: "/assets/maps/landingTitle.png",
+    startButton: "/assets/maps/clickToStart.png",
   },
 };
 
