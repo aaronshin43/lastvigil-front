@@ -272,19 +272,36 @@ export class Game {
     };
 
     const rightX = ctx.canvas.width - 20;
-    drawTextWithOutline(`FPS: ${Math.round(1000 / (performance.now() - this.lastUpdateTime))}`, rightX, ctx.canvas.height - 60);
-    drawTextWithOutline(`Effects: ${this.activeEffects.length}`, rightX, ctx.canvas.height - 40);
-    drawTextWithOutline(`Enemies: ${enemyCount}`, rightX, ctx.canvas.height - 20);
+    drawTextWithOutline(
+      `FPS: ${Math.round(1000 / (performance.now() - this.lastUpdateTime))}`,
+      rightX,
+      ctx.canvas.height - 60
+    );
+    drawTextWithOutline(
+      `Effects: ${this.activeEffects.length}`,
+      rightX,
+      ctx.canvas.height - 40
+    );
+    drawTextWithOutline(
+      `Enemies: ${enemyCount}`,
+      rightX,
+      ctx.canvas.height - 20
+    );
   }
 
   /**
    * HTML UI 요소 업데이트
    */
-  private updateHTMLUI(score: number, wave: number, gold: number, enemyCount: number): void {
-    const scoreEl = document.getElementById('score');
-    const waveEl = document.getElementById('wave');
-    const goldEl = document.getElementById('gold');
-    const enemiesEl = document.getElementById('enemies-count');
+  private updateHTMLUI(
+    score: number,
+    wave: number,
+    gold: number,
+    enemyCount: number
+  ): void {
+    const scoreEl = document.getElementById("score");
+    const waveEl = document.getElementById("wave");
+    const goldEl = document.getElementById("gold");
+    const enemiesEl = document.getElementById("enemies-count");
 
     if (scoreEl) scoreEl.textContent = `Score: ${score}`;
     if (waveEl) waveEl.textContent = `Wave: ${wave}`;
