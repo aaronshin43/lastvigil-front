@@ -44,6 +44,11 @@ export class Enemy {
   private assetLoader: AssetLoader;
   private scale: number;
 
+  // 프론트엔드 애니메이션 관리
+  private localCurrentFrame: number = 0;
+  private frameTimer: number = 0;
+  private previousAnimationState: AnimationState = "walk";
+
   constructor(
     id: string,
     typeConfig: EnemyTypeConfig,
@@ -66,9 +71,42 @@ export class Enemy {
     this.y = data.y * window.innerHeight;
     this.currentHP = data.currentHP;
     this.maxHP = data.maxHP;
-    this.animationState = data.animationState;
-    this.currentFrame = data.currentFrame;
+    
+    // 애니메이션 상태가 변경되면 프레임 리셋
+    if (this.animationState !== data.animationState) {
+      this.previousAnimationState = this.animationState;
+      this.animationState = data.animationState;
+      this.localCurrentFrame = 0;
+      this.frameTimer = 0;
+    }
+    
     this.isDead = data.isDead;
+  }
+
+  /**
+   * 애니메이션 프레임 업데이트 (deltaTime in ms)
+   */
+  public updateAnimation(deltaTime: number): void {
+    const spriteConfig = this.typeConfig.sprites[this.animationState];
+    
+    this.frameTimer += deltaTime;
+    
+    if (this.frameTimer >= spriteConfig.frameDuration) {
+      this.frameTimer -= spriteConfig.frameDuration;
+      this.localCurrentFrame++;
+      
+      // death 애니메이션은 마지막 프레임에서 멈춤
+      if (this.animationState === "death") {
+        if (this.localCurrentFrame >= spriteConfig.frameCount) {
+          this.localCurrentFrame = spriteConfig.frameCount - 1;
+        }
+      } else {
+        // 다른 애니메이션은 루프
+        if (this.localCurrentFrame >= spriteConfig.frameCount) {
+          this.localCurrentFrame = 0;
+        }
+      }
+    }
   }
 
   /**
@@ -89,7 +127,7 @@ export class Enemy {
 
     const frameWidth = spriteConfig.frameWidth;
     const frameHeight = spriteConfig.frameHeight;
-    const sx = this.currentFrame * frameWidth;
+    const sx = this.localCurrentFrame * frameWidth; // 로컬 프레임 사용
     const sy = 0;
 
     const renderWidth = frameWidth * this.scale;

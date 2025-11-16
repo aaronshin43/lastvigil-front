@@ -41,7 +41,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
         path: "/assets/sprites/Slime/Slime_walk.png",
         frameWidth: 1000,
         frameHeight: 1000,
-        frameCount: 6,
+        frameCount: 5,
         frameDuration: 150,
       },
       hurt: {
@@ -56,7 +56,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
         frameWidth: 1000,
         frameHeight: 1000,
         frameCount: 4,
-        frameDuration: 150,
+        frameDuration: 200,
       },
     },
     stats: {
@@ -91,7 +91,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
         frameWidth: 1000,
         frameHeight: 1000,
         frameCount: 4,
-        frameDuration: 150,
+        frameDuration: 200,
       },
     },
     stats: {
@@ -126,7 +126,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
         frameWidth: 1000,
         frameHeight: 1000,
         frameCount: 4,
-        frameDuration: 150,
+        frameDuration: 200,
       },
     },
     stats: {
@@ -162,7 +162,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
         frameWidth: 1000,
         frameHeight: 1000,
         frameCount: 4,
-        frameDuration: 150,
+        frameDuration: 200,
       },
     },
     stats: {
@@ -197,7 +197,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
         frameWidth: 1000,
         frameHeight: 1000,
         frameCount: 4,
-        frameDuration: 150,
+        frameDuration: 200,
       },
     },
     stats: {
@@ -232,7 +232,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
         frameWidth: 1000,
         frameHeight: 1000,
         frameCount: 4,
-        frameDuration: 150,
+        frameDuration: 200,
       },
     },
     stats: {
@@ -268,7 +268,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
         frameWidth: 1000,
         frameHeight: 1000,
         frameCount: 4,
-        frameDuration: 150,
+        frameDuration: 200,
       },
     },
     stats: {
@@ -303,7 +303,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
         frameWidth: 1000,
         frameHeight: 1000,
         frameCount: 4,
-        frameDuration: 150,
+        frameDuration: 200,
       },
     },
     stats: {
@@ -338,7 +338,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
         frameWidth: 1000,
         frameHeight: 1000,
         frameCount: 4,
-        frameDuration: 150,
+        frameDuration: 200,
       },
     },
     stats: {

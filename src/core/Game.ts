@@ -196,6 +196,11 @@ export class Game {
     // 시선 커서 스무딩
     this.gazeCursor.update();
 
+    // 적 애니메이션 업데이트
+    for (const enemy of this.enemies.values()) {
+      enemy.updateAnimation(deltaTime);
+    }
+
     // 이펙트 업데이트
     for (const effect of this.activeEffects) {
       effect.update(deltaTime);
