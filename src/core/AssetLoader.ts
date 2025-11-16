@@ -174,25 +174,30 @@ export class AssetLoader {
    * 경로로 이미지 가져오기 (범용)
    */
   getImageByPath(path: string): HTMLImageElement | null {
-    // loadedImages에서 경로로 검색
-    for (const [key, image] of this.loadedImages.entries()) {
-      // 맵 경로 확인
-      const mapEntry = Object.entries(ASSET_MANIFEST.maps).find(
-        ([name]) => `map_${name}` === key
-      );
-      if (mapEntry && mapEntry[1] === path) return image;
+    // 맵 경로 확인
+    for (const [name, mapPath] of Object.entries(ASSET_MANIFEST.maps)) {
+      if (mapPath === path) {
+        return this.loadedImages.get(`map_${name}`) || null;
+      }
+    }
 
-      // VFX 경로 확인
-      const vfxEntry = Object.entries(VFX_TYPES).find(
-        ([name]) => `vfx_${name}` === key
-      );
-      if (vfxEntry && vfxEntry[1].path === path) return image;
+    // VFX 경로 확인
+    for (const [name, vfxConfig] of Object.entries(VFX_TYPES)) {
+      if (vfxConfig.path === path) {
+        return this.loadedImages.get(`vfx_${name}`) || null;
+      }
+    }
 
-      // 적 스프라이트 경로 확인
-      for (const enemyType of Object.values(ENEMY_TYPES)) {
-        if (enemyType.sprites.walk.path === path) return image;
-        if (enemyType.sprites.hurt.path === path) return image;
-        if (enemyType.sprites.death.path === path) return image;
+    // 적 스프라이트 경로 확인
+    for (const [enemyId, enemyType] of Object.entries(ENEMY_TYPES)) {
+      if (enemyType.sprites.walk.path === path) {
+        return this.loadedImages.get(`enemy_${enemyId}_walk`) || null;
+      }
+      if (enemyType.sprites.hurt.path === path) {
+        return this.loadedImages.get(`enemy_${enemyId}_hurt`) || null;
+      }
+      if (enemyType.sprites.death.path === path) {
+        return this.loadedImages.get(`enemy_${enemyId}_death`) || null;
       }
     }
 
