@@ -71,7 +71,7 @@ export class Enemy {
     this.y = data.y * window.innerHeight;
     this.currentHP = data.currentHP;
     this.maxHP = data.maxHP;
-    
+
     // 애니메이션 상태가 변경되면 프레임 리셋
     if (this.animationState !== data.animationState) {
       this.previousAnimationState = this.animationState;
@@ -79,7 +79,7 @@ export class Enemy {
       this.localCurrentFrame = 0;
       this.frameTimer = 0;
     }
-    
+
     this.isDead = data.isDead;
   }
 
@@ -88,13 +88,13 @@ export class Enemy {
    */
   public updateAnimation(deltaTime: number): void {
     const spriteConfig = this.typeConfig.sprites[this.animationState];
-    
+
     this.frameTimer += deltaTime;
-    
+
     if (this.frameTimer >= spriteConfig.frameDuration) {
       this.frameTimer -= spriteConfig.frameDuration;
       this.localCurrentFrame++;
-      
+
       // death 애니메이션은 마지막 프레임에서 멈춤
       if (this.animationState === "death") {
         if (this.localCurrentFrame >= spriteConfig.frameCount) {

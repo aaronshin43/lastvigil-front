@@ -157,16 +157,16 @@ export class Game {
         // y: 화면 하단 60% 지점으로 고정
         const pixelX = effectState.x * window.innerWidth;
         const fixedY = window.innerHeight * 0.6;
-        
-        const effect = this.createEffect(
-          effectState.type,
-          pixelX,
-          fixedY
-        );
+
+        const effect = this.createEffect(effectState.type, pixelX, fixedY);
         if (effect) {
           (effect as any).id = effectState.id; // ID 태깅
           this.activeEffects.push(effect);
-          console.log(`✨ 이펙트 생성: ${effectState.type} at (${pixelX.toFixed(0)}, ${fixedY.toFixed(0)})`);
+          console.log(
+            `✨ 이펙트 생성: ${effectState.type} at (${pixelX.toFixed(
+              0
+            )}, ${fixedY.toFixed(0)})`
+          );
         }
       }
     }
