@@ -5,10 +5,11 @@
  */
 
 import type { VFXMetadata } from "./VFXTypes";
+import type { Camera } from "../core/Camera";
 
 export class Effect {
-  private x: number;
-  private y: number;
+  private worldX: number; // 월드 좌표 x
+  private y: number; // 스크린 좌표 y (yOffset 반영된 고정 위치)
   private image: HTMLImageElement;
   private frameWidth: number;
   private frameHeight: number;
@@ -22,12 +23,12 @@ export class Effect {
   private isFinished: boolean = false;
 
   constructor(
-    x: number,
+    worldX: number, // 월드 좌표로 받음
     y: number,
     image: HTMLImageElement,
     metadata: VFXMetadata
   ) {
-    this.x = x;
+    this.worldX = worldX;
     this.y = y;
     this.image = image;
     this.frameWidth = metadata.frameWidth;
@@ -67,20 +68,33 @@ export class Effect {
   /**
    * 이펙트를 캔버스에 그리기
    * @param ctx 2D 렌더링 컨텍스트
+   * @param camera 카메라 객체 (월드 → 스크린 좌표 변환)
    */
-  draw(ctx: CanvasRenderingContext2D): void {
+  draw(ctx: CanvasRenderingContext2D, camera: Camera): void {
     if (!this.image.complete) return; // 이미지 로드 안 됐으면 스킵
+
+    // 월드 좌표를 스크린 좌표로 변환
+    const screenPos = camera.worldToScreen(this.worldX, this.y);
+
+    // 화면 밖이면 그리지 않음 (최적화)
+    const drawWidth = this.frameWidth * this.scale;
+    const drawHeight = this.frameHeight * this.scale;
+    const margin = 200;
+    if (
+      screenPos.x < -margin ||
+      screenPos.x > camera.getViewportWidth() + margin
+    ) {
+      return;
+    }
 
     // 스프라이트시트에서 현재 프레임의 위치 계산
     // 가정: 스프라이트시트는 가로로 프레임이 나열됨
     const sx = this.currentFrame * this.frameWidth;
     const sy = 0;
 
-    // 그릴 위치와 크기 계산 (중심 기준)
-    const drawWidth = this.frameWidth * this.scale;
-    const drawHeight = this.frameHeight * this.scale;
-    const drawX = this.x - drawWidth / 2;
-    const drawY = this.y - drawHeight / 2;
+    // 그릴 위치 계산 (중심 기준, 스크린 좌표 사용)
+    const drawX = screenPos.x - drawWidth / 2;
+    const drawY = screenPos.y - drawHeight / 2;
 
     ctx.drawImage(
       this.image,
@@ -103,29 +117,29 @@ export class Effect {
   }
 
   /**
-   * 이펙트 위치 설정
+   * 이펙트 위치 설정 (월드 좌표)
    */
-  setPosition(x: number, y: number): void {
-    this.x = x;
+  setPosition(worldX: number, y: number): void {
+    this.worldX = worldX;
     this.y = y;
   }
 
   /**
-   * 현재 위치 반환
+   * 현재 위치 반환 (월드 좌표 x, 스크린 좌표 y)
    */
   getPosition(): { x: number; y: number } {
-    return { x: this.x, y: this.y };
+    return { x: this.worldX, y: this.y };
   }
 
   /**
    * 이펙트 리셋 (재사용 시)
    */
-  reset(x?: number, y?: number): void {
+  reset(worldX?: number, y?: number): void {
     this.currentFrame = 0;
     this.elapsedTime = 0;
     this.isFinished = false;
 
-    if (x !== undefined) this.x = x;
+    if (worldX !== undefined) this.worldX = worldX;
     if (y !== undefined) this.y = y;
   }
 }

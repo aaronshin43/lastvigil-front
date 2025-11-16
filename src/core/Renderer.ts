@@ -5,11 +5,13 @@
 
 import type { Effect } from "../gameplay/Effect";
 import type { GazeCursor } from "../gameplay/GazeCursor";
+import type { Camera } from "./Camera";
 
 export interface RendererConfig {
   backgroundCanvasId: string;
   gameCanvasId: string;
   backgroundColor?: string;
+  camera: Camera;
 }
 
 export class Renderer {
@@ -17,15 +19,15 @@ export class Renderer {
   private backgroundCtx: CanvasRenderingContext2D;
   private gameCanvas: HTMLCanvasElement;
   private gameCtx: CanvasRenderingContext2D;
+  private camera: Camera;
 
   private backgroundColor: string;
   private isRunning: boolean = false;
   private animationFrameId: number | null = null;
   private lastFrameTime: number = 0;
 
-  // 배경 이미지 스크롤 관리
+  // 배경 이미지
   private backgroundImage: HTMLImageElement | null = null;
-  private backgroundOffset: number = 0;
 
   // 렌더링할 객체들 (외부에서 주입)
   private effects: Effect[] = [];
@@ -53,6 +55,7 @@ export class Renderer {
     this.gameCtx = this.gameCanvas.getContext("2d")!;
 
     this.backgroundColor = config.backgroundColor || "#000000";
+    this.camera = config.camera;
 
     // 캔버스 크기 설정
     this.resizeCanvases();
@@ -88,22 +91,14 @@ export class Renderer {
   }
 
   /**
-   * 배경 오프셋 설정 (스크롤용)
+   * 배경 다시 그리기 (외부에서 호출 가능)
    */
-  setBackgroundOffset(offset: number): void {
-    this.backgroundOffset = offset;
+  public redrawBackground(): void {
     this.drawBackground();
   }
 
   /**
-   * 배경 오프셋 가져오기
-   */
-  getBackgroundOffset(): number {
-    return this.backgroundOffset;
-  }
-
-  /**
-   * 배경 이미지 그리기
+   * 배경 이미지 그리기 (Camera 기반)
    */
   private drawBackground(): void {
     this.backgroundCtx.clearRect(
@@ -129,17 +124,21 @@ export class Renderer {
       return;
     }
 
-    // 이미지를 화면 높이에 맞춤
-    const imageHeight = this.backgroundCanvas.height;
-    const imageWidth =
-      this.backgroundImage.naturalWidth *
-      (imageHeight / this.backgroundImage.naturalHeight);
-    const centerX = (this.backgroundCanvas.width - imageWidth) / 2;
+    // 배경 이미지를 월드 크기에 맞춰 그리기
+    const worldWidth = this.camera.getWorldWidth();
+    const viewportHeight = this.backgroundCanvas.height;
+    
+    // 화면을 꽉 채우도록 설정
+    const imageWidth = worldWidth;
+    const imageHeight = viewportHeight; // 화면 높이에 맞춤 (종횡비 무시)
+    
+    // 카메라 오프셋 적용 (배경이 월드와 함께 스크롤)
+    const cameraOffset = -this.camera.getOffsetX();
 
     this.backgroundCtx.drawImage(
       this.backgroundImage,
-      centerX + this.backgroundOffset,
-      0,
+      cameraOffset,
+      0, // yOffset 제거, 상단부터 그리기
       imageWidth,
       imageHeight
     );
@@ -207,6 +206,9 @@ export class Renderer {
     const deltaTime = now - this.lastFrameTime;
     this.lastFrameTime = now;
 
+    // 배경 다시 그리기 (카메라 이동 반영)
+    this.drawBackground();
+
     // 게임 캔버스 클리어
     this.clear();
 
@@ -220,7 +222,7 @@ export class Renderer {
     for (let i = this.effects.length - 1; i >= 0; i--) {
       const effect = this.effects[i];
       effect.update(deltaTime);
-      effect.draw(this.gameCtx);
+      effect.draw(this.gameCtx, this.camera);
 
       // 완료된 이펙트 제거
       if (effect.isComplete()) {

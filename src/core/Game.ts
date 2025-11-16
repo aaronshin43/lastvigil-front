@@ -10,6 +10,7 @@ import { GazeCursor } from "../gameplay/GazeCursor";
 import { Effect } from "../gameplay/Effect";
 import { Enemy, type EnemyStateData } from "../gameplay/Enemy";
 import { getEnemyConfig } from "../gameplay/EnemyTypes";
+import type { Camera } from "./Camera";
 
 /**
  * 서버로부터 받는 게임 상태 데이터 구조
@@ -30,12 +31,14 @@ export interface GameConfig {
   assetLoader: AssetLoader;
   renderer: Renderer;
   gazeCursor: GazeCursor;
+  camera: Camera;
 }
 
 export class Game {
   private assetLoader: AssetLoader;
   private renderer: Renderer;
   private gazeCursor: GazeCursor;
+  private camera: Camera;
 
   // 렌더링할 객체들 (서버 데이터 기반)
   private enemies: Map<string, Enemy> = new Map();
@@ -55,6 +58,7 @@ export class Game {
     this.assetLoader = config.assetLoader;
     this.renderer = config.renderer;
     this.gazeCursor = config.gazeCursor;
+    this.camera = config.camera;
   }
 
   /**
@@ -112,9 +116,12 @@ export class Game {
   private updateEnemies(enemyStates: EnemyStateData[]): void {
     const currentEnemyIds = new Set(enemyStates.map((e) => e.id));
 
+    console.log(`👾 Enemy update: ${enemyStates.length} enemies from server, ${this.enemies.size} in game`);
+
     // 서버에서 제거된 적 삭제
     for (const id of this.enemies.keys()) {
       if (!currentEnemyIds.has(id)) {
+        console.log(`❌ Enemy removed: ${id}`);
         this.enemies.delete(id);
       }
     }
@@ -132,6 +139,7 @@ export class Game {
         }
         enemy = new Enemy(enemyState.id, config, this.assetLoader);
         this.enemies.set(enemyState.id, enemy);
+        console.log(`✨ Enemy created: ${enemyState.id}, type=${enemyState.typeId}, x=${enemyState.x.toFixed(3)}, y=${enemyState.y.toFixed(3)}`);
       }
 
       // 서버 데이터로 상태 업데이트
@@ -153,8 +161,9 @@ export class Game {
     // 새로운 이펙트 생성
     for (const effectState of effectStates) {
       if (!existingEffectIds.has(effectState.id)) {
-        // x: 정규화된 좌표(0~1)를 픽셀로 변환
-        const pixelX = effectState.x * window.innerWidth;
+        // x: 정규화된 좌표(0~1)를 월드 좌표로 변환
+        const WORLD_WIDTH = 2148; // 백엔드 맵 크기
+        const worldX = effectState.x * WORLD_WIDTH;
         
         // y: VFX 메타데이터의 yOffset 적용 (기본 0.7)
         const vfxMetadata = this.assetLoader.getVFXMetadata(effectState.type);
@@ -166,14 +175,14 @@ export class Game {
         
         const effect = this.createEffect(
           effectState.type,
-          pixelX,
+          worldX,
           fixedY
         );
         if (effect) {
           (effect as any).id = effectState.id; // ID 태깅
           this.activeEffects.push(effect);
           console.log(
-            `✨ 이펙트 생성: ${effectState.type} at (${pixelX.toFixed(
+            `✨ 이펙트 생성: ${effectState.type} at world(${worldX.toFixed(
               0
             )}, ${fixedY.toFixed(0)})`
           );
@@ -226,20 +235,29 @@ export class Game {
    * 렌더링
    */
   private render(): void {
+    // 0. 배경 그리기 (카메라 오프셋 반영)
+    this.renderer.redrawBackground();
+
     const ctx = this.renderer.getGameContext();
     if (!ctx) return;
 
-    // 캔버스 클리어
+    // 캠버스 클리어
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     // 1. 적 그리기 (latestGameState.enemies 기반)
+    let drawnEnemies = 0;
     for (const enemy of this.enemies.values()) {
-      enemy.draw(ctx);
+      enemy.draw(ctx, this.camera);
+      drawnEnemies++;
+    }
+    
+    if (drawnEnemies > 0) {
+      console.log(`👾 Drew ${drawnEnemies} enemies | camera offset: ${this.camera.getOffsetX().toFixed(0)}`);
     }
 
     // 2. 이펙트 그리기
     for (const effect of this.activeEffects) {
-      effect.draw(ctx);
+      effect.draw(ctx, this.camera);
     }
 
     // 3. 시선 커서 그리기

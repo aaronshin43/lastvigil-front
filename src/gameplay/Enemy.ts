@@ -5,9 +5,13 @@
  */
 
 import { AssetLoader } from "../core/AssetLoader";
+import type { Camera } from "../core/Camera";
 import type { EnemyTypeConfig } from "./EnemyTypes";
 
 type AnimationState = "walk" | "hurt" | "death";
+
+// 맵 전체 너비 (화면 너비의 3배)
+const WORLD_WIDTH = 2148;
 
 /**
  * 서버로부터 받는 적 상태 데이터
@@ -15,8 +19,8 @@ type AnimationState = "walk" | "hurt" | "death";
 export interface EnemyStateData {
   id: string;
   typeId: string;
-  x: number; // 정규화된 x 좌표 (0.0~1.0)
-  y: number; // 정규화된 y 좌표 (0.0~1.0)
+  x: number; // 맵 전체 기준 정규화 x 좌표 (0.0~1.0)
+  y: number; // 화면 기준 정규화 y 좌표 (0.0~1.0)
   currentHP: number;
   maxHP: number;
   animationState: AnimationState;
@@ -47,7 +51,6 @@ export class Enemy {
   // 프론트엔드 애니메이션 관리
   private localCurrentFrame: number = 0;
   private frameTimer: number = 0;
-  private previousAnimationState: AnimationState = "walk";
 
   constructor(
     id: string,
@@ -66,15 +69,15 @@ export class Enemy {
    * 서버로부터 받은 상태로 업데이트
    */
   public updateFromServer(data: EnemyStateData): void {
-    // 정규화된 좌표(0~1)를 픽셀 좌표로 변환
-    this.x = data.x * window.innerWidth;
+    // x: 맵 전체 기준 정규화 좌표(0~1)를 월드 좌표로 변환
+    this.x = data.x * WORLD_WIDTH;
+    // y: 화면 기준 정규화 좌표(0~1)를 화면 좌표로 변환
     this.y = data.y * window.innerHeight;
     this.currentHP = data.currentHP;
     this.maxHP = data.maxHP;
 
     // 애니메이션 상태가 변경되면 프레임 리셋
     if (this.animationState !== data.animationState) {
-      this.previousAnimationState = this.animationState;
       this.animationState = data.animationState;
       this.localCurrentFrame = 0;
       this.frameTimer = 0;
@@ -118,9 +121,29 @@ export class Enemy {
   }
 
   /**
-   * 캔버스에 그리기
+   * 캔버스에 그리기 (카메라 오프셋 적용)
    */
-  public draw(ctx: CanvasRenderingContext2D): void {
+  public draw(ctx: CanvasRenderingContext2D, camera: Camera): void {
+    // 월드 좌표 → 화면 좌표 변환
+    const screenPos = camera.worldToScreen(this.x, this.y);
+
+    // 🔍 디버깅: 적 위치 로그 (첫 번째 적만)
+    if (this.id.endsWith('0')) {
+      console.log(`👾 Enemy draw: id=${this.id}, world(${this.x.toFixed(0)}, ${this.y.toFixed(0)}) → screen(${screenPos.x.toFixed(0)}, ${screenPos.y.toFixed(0)})`);
+    }
+
+    // 화면 밖이면 그리지 않음 (최적화)
+    const margin = 200;
+    if (
+      screenPos.x < -margin ||
+      screenPos.x > camera.getViewportWidth() + margin
+    ) {
+      if (this.id.endsWith('0')) {
+        console.log(`🚫 Enemy ${this.id} culled: screenX=${screenPos.x.toFixed(0)}, viewport=${camera.getViewportWidth()}`);
+      }
+      return;
+    }
+
     const spriteConfig = this.typeConfig.sprites[this.animationState];
     const image = this.assetLoader.getImageByPath(spriteConfig.path);
 
@@ -128,7 +151,7 @@ export class Enemy {
       // 이미지 로드 안됨 - 디버그용 원 그리기
       ctx.fillStyle = "red";
       ctx.beginPath();
-      ctx.arc(this.x, this.y, 20, 0, Math.PI * 2);
+      ctx.arc(screenPos.x, screenPos.y, 20, 0, Math.PI * 2);
       ctx.fill();
       return;
     }
@@ -154,26 +177,26 @@ export class Enemy {
       sy,
       frameWidth,
       frameHeight,
-      this.x - renderWidth / 2,
-      this.y - renderHeight / 2,
+      screenPos.x - renderWidth / 2,
+      screenPos.y - renderHeight / 2,
       renderWidth,
       renderHeight
     );
 
     // HP 바 그리기
     if (!this.isDead) {
-      this.drawHealthBar(ctx);
+      this.drawHealthBar(ctx, screenPos.x, screenPos.y);
     }
   }
 
   /**
    * HP 바 그리기
    */
-  private drawHealthBar(ctx: CanvasRenderingContext2D): void {
+  private drawHealthBar(ctx: CanvasRenderingContext2D, screenX: number, screenY: number): void {
     const barWidth = 50;
     const barHeight = 5;
-    const barX = this.x - barWidth / 2;
-    const barY = this.y - 40;
+    const barX = screenX - barWidth / 2;
+    const barY = screenY - 40;
 
     // 배경 (빨강)
     ctx.fillStyle = "red";
