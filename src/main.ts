@@ -12,6 +12,7 @@ import { Camera } from "./core/Camera";
 import { LandingScreen } from "./core/LandingScreen";
 import { CountdownScreen } from "./core/CountdownScreen";
 import { GameOverScreen } from "./core/GameOverScreen";
+import { AudioManager } from "./core/AudioManager";
 
 // 전역 상태 관리
 let assetLoader: AssetLoader;
@@ -23,6 +24,7 @@ let camera: Camera;
 let landingScreen: LandingScreen;
 let countdownScreen: CountdownScreen;
 let gameOverScreen: GameOverScreen;
+let audioManager: AudioManager;
 
 // 웹캠 관리
 let webcamActive = false;
@@ -58,6 +60,10 @@ async function init() {
     console.log("📦 에셋 로딩 중...");
     await assetLoader.loadAll();
     console.log("✅ 에셋 로딩 완료!");
+
+    // 1-1. AudioManager 초기화 (배경 음악)
+    audioManager = new AudioManager("/assets/music/background.mp3");
+    console.log("🎵 오디오 매니저 초기화 완료");
 
     // 2. LandingScreen 초기화 및 표시
     landingScreen = new LandingScreen({
@@ -97,6 +103,10 @@ async function init() {
  */
 function startGame() {
   console.log("🚀 게임 시작 준비!");
+
+  // 배경 음악 재생 시작
+  audioManager.play();
+  console.log("🎵 배경 음악 재생 시작");
 
   // 랜딩 화면 숨기기
   landingScreen.hide();
@@ -360,11 +370,13 @@ function setupUIEvents() {
   const aslGuideContainer = document.getElementById(
     "asl-guide-container"
   ) as HTMLDivElement;
+  const muteButton = document.getElementById("mute-button") as HTMLButtonElement;
 
   console.log("🎮 UI 이벤트 설정 중...", {
     skipButtonImg,
     guideButton,
     aslGuideContainer,
+    muteButton,
   });
 
   // 새 스킵 버튼 이미지
@@ -401,6 +413,21 @@ function setupUIEvents() {
     });
   } else {
     console.error("❌ guide-button 또는 asl-guide-container를 찾을 수 없습니다.");
+  }
+
+  // Mute 버튼 클릭 - 배경 음악 음소거 토글
+  if (muteButton) {
+    // 초기 버튼 상태 설정
+    muteButton.textContent = audioManager.getMuteState() ? "🔇" : "🔊";
+    
+    muteButton.addEventListener("click", () => {
+      audioManager.toggleMute();
+      const isMuted = audioManager.getMuteState();
+      muteButton.textContent = isMuted ? "🔇" : "🔊";
+      console.log(`🔊 배경 음악 ${isMuted ? "음소거" : "음소거 해제"}`);
+    });
+  } else {
+    console.error("❌ mute-button을 찾을 수 없습니다.");
   }
 }
 
@@ -664,6 +691,7 @@ function hideGameUI() {
   const status2 = document.getElementById("status2-display");
   const guideButton = document.getElementById("guide-button");
   const skipButton = document.getElementById("skip-button");
+  const muteButton = document.getElementById("mute-button");
   const gameUI = document.getElementById("game-ui");
   const topFrame = document.getElementById("top-frame");
   const scoreImage = document.getElementById("score-image");
@@ -671,6 +699,7 @@ function hideGameUI() {
   if (status2) status2.style.display = "none";
   if (guideButton) guideButton.style.display = "none";
   if (skipButton) skipButton.style.display = "none";
+  if (muteButton) muteButton.style.display = "none";
   if (gameUI) gameUI.style.display = "none";
   if (topFrame) topFrame.style.display = "none";
   if (scoreImage) scoreImage.style.display = "none";
@@ -683,6 +712,7 @@ function showGameUI() {
   const status2 = document.getElementById("status2-display");
   const guideButton = document.getElementById("guide-button");
   const skipButton = document.getElementById("skip-button");
+  const muteButton = document.getElementById("mute-button");
   const gameUI = document.getElementById("game-ui");
   const topFrame = document.getElementById("top-frame");
   const scoreImage = document.getElementById("score-image");
@@ -690,6 +720,7 @@ function showGameUI() {
   if (status2) status2.style.display = "block";
   if (guideButton) guideButton.style.display = "block";
   if (skipButton) skipButton.style.display = "block";
+  if (muteButton) muteButton.style.display = "flex";
   if (gameUI) gameUI.style.display = "block";
   if (topFrame) topFrame.style.display = "block";
   if (scoreImage) scoreImage.style.display = "block";

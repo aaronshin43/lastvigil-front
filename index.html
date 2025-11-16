@@ -136,6 +136,33 @@
       onmouseout="this.style.transform='scale(1)'"
     />
 
+    <!-- Mute 버튼 (오른쪽 상단) -->
+    <button
+      id="mute-button"
+      style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        border: 3px solid #f5eac4;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.7);
+        color: #f5eac4;
+        font-size: 28px;
+        cursor: pointer;
+        z-index: 102;
+        transition: all 0.2s;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      "
+      onmouseover="this.style.transform='scale(1.1)'; this.style.background='rgba(0, 0, 0, 0.9)'"
+      onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(0, 0, 0, 0.7)'"
+    >
+      🔊
+    </button>
+
     <!-- Score 이미지 -->
     <img
       id="score-image"
