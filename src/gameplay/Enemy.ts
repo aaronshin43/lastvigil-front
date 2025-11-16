@@ -190,27 +190,97 @@ export class Enemy {
   }
 
   /**
-   * HP 바 그리기
+   * HP 바 그리기 (픽셀 아트 스타일, 몹 크기에 맞춰 조정)
    */
-  private drawHealthBar(ctx: CanvasRenderingContext2D, screenX: number, screenY: number): void {
-    const barWidth = 50;
-    const barHeight = 5;
-    const barX = screenX - barWidth / 2;
-    const barY = screenY - 40;
+  private drawHealthBar(
+    ctx: CanvasRenderingContext2D,
+    screenX: number,
+    screenY: number
+  ): void {
+    // 픽셀 아트 설정
+    ctx.imageSmoothingEnabled = false;
 
-    // 배경 (빨강)
-    ctx.fillStyle = "red";
-    ctx.fillRect(barX, barY, barWidth, barHeight);
+    // scale에 따라 세그먼트 크기 조정 (작은 몹 = 작은 HP바)
+    const baseSegmentSize = Math.max(
+      6,
+      Math.min(10, Math.round(this.scale * 14))
+    );
+    const segmentWidth = baseSegmentSize;
+    const segmentHeight = baseSegmentSize;
+    const segmentGap = 1;
 
-    // HP (초록)
-    const hpRatio = this.currentHP / this.maxHP;
-    ctx.fillStyle = "lime";
-    ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
+    // HP에 따라 세그먼트 개수 조정 (최소 5개, 최대 10개)
+    let numSegments: number;
+    if (this.maxHP <= 50) {
+      numSegments = 5; // 슬라임 등 약한 몹
+    } else if (this.maxHP <= 100) {
+      numSegments = 6; // 해골, 오크 등
+    } else if (this.maxHP <= 200) {
+      numSegments = 8; // 강한 몹
+    } else {
+      numSegments = 10; // 보스급
+    }
 
-    // 테두리
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(barX, barY, barWidth, barHeight);
+    const totalWidth = numSegments * (segmentWidth + segmentGap) - segmentGap;
+
+    const barX = screenX - totalWidth / 2 - 15;
+    // 몹 중심에서 약간 위로 (머리 근처)
+    const barY = screenY - 60;
+
+    const hpRatio = Math.max(0, this.currentHP / this.maxHP);
+    const filledSegments = Math.ceil(hpRatio * numSegments);
+
+    // 각 세그먼트 그리기
+    for (let i = 0; i < numSegments; i++) {
+      const segX = barX + i * (segmentWidth + segmentGap);
+      const isFilled = i < filledSegments;
+
+      // 외곽 테두리 (검은색, 1픽셀)
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(segX, barY, segmentWidth, segmentHeight);
+
+      // 내부 영역
+      const innerX = segX + 1;
+      const innerY = barY + 1;
+      const innerWidth = segmentWidth - 2;
+      const innerHeight = segmentHeight - 2;
+
+      if (isFilled) {
+        // HP 색상 결정
+        let mainColor, lightColor, darkColor;
+        if (hpRatio > 0.6) {
+          mainColor = "#44ff44"; // 초록
+          lightColor = "#88ff88";
+          darkColor = "#22aa22";
+        } else if (hpRatio > 0.3) {
+          mainColor = "#ffdd44"; // 노랑
+          lightColor = "#ffee88";
+          darkColor = "#cc9922";
+        } else {
+          mainColor = "#ff4444"; // 빨강
+          lightColor = "#ff8888";
+          darkColor = "#cc2222";
+        }
+
+        // 메인 색상
+        ctx.fillStyle = mainColor;
+        ctx.fillRect(innerX, innerY, innerWidth, innerHeight);
+
+        // 상단 하이라이트 (1픽셀)
+        ctx.fillStyle = lightColor;
+        ctx.fillRect(innerX, innerY, innerWidth, 1);
+
+        // 하단 음영 (1픽셀)
+        ctx.fillStyle = darkColor;
+        ctx.fillRect(innerX, innerY + innerHeight - 1, innerWidth, 1);
+      } else {
+        // 빈 세그먼트 (어두운 회색)
+        ctx.fillStyle = "#2a2a3a";
+        ctx.fillRect(innerX, innerY, innerWidth, innerHeight);
+      }
+    }
+
+    ctx.imageSmoothingEnabled = true;
   }
 
   /**

@@ -218,36 +218,187 @@ export class Renderer {
   }
 
   /**
-   * Witch HP 바 그리기
+   * Witch HP 바 그리기 (픽셀 아트 스타일)
    */
   private drawWitchHealthBar(x: number, y: number, width: number): void {
-    const barWidth = Math.min(width * 0.8, 150); // Witch 크기의 80% 또는 최대 150px
-    const barHeight = 10;
-    const barX = x + (width - barWidth) / 2;
-    const barY = y + 230; // Witch 위쪽에 표시
+    // 픽셀 아트 스타일 설정
+    this.backgroundCtx.imageSmoothingEnabled = false;
 
-    // 배경 (발간)
-    this.backgroundCtx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    this.backgroundCtx.fillRect(
-      barX - 2,
-      barY - 2,
-      barWidth + 4,
-      barHeight + 4
-    );
+    const segmentWidth = 20; // 각 세그먼트 너비
+    const segmentHeight = 18; // 세그먼트 높이
+    const segmentGap = 2; // 세그먼트 간격
+    const numSegments = 10; // 총 세그먼트 수 (10칸)
+    const hpPerSegment = 10; // 각 칸당 HP
+    const totalWidth = numSegments * (segmentWidth + segmentGap);
 
-    // HP 바 배경 (빨간색)
-    this.backgroundCtx.fillStyle = "#8B0000";
-    this.backgroundCtx.fillRect(barX, barY, barWidth, barHeight);
+    const barX = x + (width - totalWidth) / 2;
+    const barY = y + 225; // Witch 위쪽에 표시
 
-    // 현재 HP (초록색)
+    // 채워진 세그먼트 수 계산 (각 칸당 10 HP)
+    const filledSegments = Math.floor(this.witchHP / hpPerSegment);
+    const partialSegment = (this.witchHP % hpPerSegment) / hpPerSegment;
     const hpRatio = Math.max(0, this.witchHP / this.witchMaxHP);
-    this.backgroundCtx.fillStyle = "#00FF00";
-    this.backgroundCtx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
 
-    // 테두리
-    this.backgroundCtx.strokeStyle = "white";
-    this.backgroundCtx.lineWidth = 2;
-    this.backgroundCtx.strokeRect(barX, barY, barWidth, barHeight);
+    // 하트 아이콘 그리기 (픽셀 스타일)
+    const heartX = barX - 22;
+    const heartY = barY + 1;
+    this.drawPixelHeart(heartX, heartY, hpRatio);
+
+    // 각 세그먼트 그리기
+    for (let i = 0; i < numSegments; i++) {
+      const segX = barX + i * (segmentWidth + segmentGap);
+
+      let fillAmount = 0;
+      if (i < filledSegments) {
+        fillAmount = 1; // 완전히 채워짐
+      } else if (i === filledSegments && partialSegment > 0) {
+        fillAmount = partialSegment; // 부분적으로 채워짐
+      }
+
+      this.drawHPSegment(
+        segX,
+        barY,
+        segmentWidth,
+        segmentHeight,
+        fillAmount,
+        hpRatio
+      );
+    }
+
+    this.backgroundCtx.imageSmoothingEnabled = true;
+  }
+
+  /**
+   * HP 세그먼트 하나 그리기 (픽셀 아트 스타일)
+   */
+  private drawHPSegment(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    fillAmount: number,
+    hpRatio: number
+  ): void {
+    // 외곽 테두리 (검은색, 2픽셀)
+    this.backgroundCtx.fillStyle = "#000000";
+    this.backgroundCtx.fillRect(x, y, width, height);
+
+    // 내부 영역
+    const innerX = x + 2;
+    const innerY = y + 2;
+    const innerWidth = width - 4;
+    const innerHeight = height - 4;
+
+    if (fillAmount > 0) {
+      // HP 색상 결정
+      let mainColor, lightColor, darkColor;
+      if (hpRatio > 0.6) {
+        // 초록색 계열
+        mainColor = "#ff5555"; // 밝은 빨강
+        lightColor = "#ffaaaa"; // 매우 밝은 빨강 (상단 하이라이트)
+        darkColor = "#cc3333"; // 어두운 빨강 (하단 음영)
+      } else if (hpRatio > 0.3) {
+        // 노란색 계열
+        mainColor = "#ff5555";
+        lightColor = "#ffaaaa";
+        darkColor = "#cc3333";
+      } else {
+        // 빨간색 계열
+        mainColor = "#ff5555";
+        lightColor = "#ffaaaa";
+        darkColor = "#cc3333";
+      }
+
+      // 부분적으로 채워진 경우 너비 조정
+      const fillWidth = innerWidth * fillAmount;
+
+      // 메인 색상 (대부분의 영역)
+      this.backgroundCtx.fillStyle = mainColor;
+      this.backgroundCtx.fillRect(innerX, innerY, fillWidth, innerHeight);
+
+      // 상단 하이라이트 (밝은 색, 2-3픽셀)
+      this.backgroundCtx.fillStyle = lightColor;
+      this.backgroundCtx.fillRect(innerX, innerY, fillWidth, 3);
+
+      // 하단 음영 (어두운 색, 2픽셀)
+      this.backgroundCtx.fillStyle = darkColor;
+      this.backgroundCtx.fillRect(
+        innerX,
+        innerY + innerHeight - 2,
+        fillWidth,
+        2
+      );
+
+      // 빈 부분이 있으면 채우기
+      if (fillAmount < 1) {
+        const emptyDark = "#3d3d5c";
+        const emptyLight = "#5a5a7a";
+        const emptyX = innerX + fillWidth;
+        const emptyWidth = innerWidth - fillWidth;
+
+        this.backgroundCtx.fillStyle = emptyDark;
+        this.backgroundCtx.fillRect(emptyX, innerY, emptyWidth, innerHeight);
+
+        this.backgroundCtx.fillStyle = emptyLight;
+        this.backgroundCtx.fillRect(emptyX, innerY, emptyWidth, 2);
+      }
+    } else {
+      // 완전히 빈 세그먼트 (어두운 회색)
+      const emptyDark = "#3d3d5c"; // 어두운 보라빛 회색
+      const emptyLight = "#5a5a7a"; // 밝은 보라빛 회색 (하이라이트)
+
+      this.backgroundCtx.fillStyle = emptyDark;
+      this.backgroundCtx.fillRect(innerX, innerY, innerWidth, innerHeight);
+
+      // 상단 하이라이트
+      this.backgroundCtx.fillStyle = emptyLight;
+      this.backgroundCtx.fillRect(innerX, innerY, innerWidth, 2);
+    }
+  }
+
+  /**
+   * 픽셀 하트 아이콘 그리기
+   */
+  private drawPixelHeart(x: number, y: number, hpRatio: number): void {
+    const pixelSize = 2;
+
+    // 하트 픽셀 패턴 (8x7)
+    const heartPattern = [
+      [0, 1, 1, 0, 0, 1, 1, 0],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 1, 1, 0, 0],
+      [0, 0, 0, 1, 1, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+    ];
+
+    // 하트 색상 결정
+    let heartColor;
+    if (hpRatio > 0.6) {
+      heartColor = "#ff3366"; // 밝은 핑크-레드
+    } else if (hpRatio > 0.3) {
+      heartColor = "#ff3366"; // 밝은 핑크-레드
+    } else if (hpRatio > 0) {
+      heartColor = "#ff3366"; // 밝은 핑크-레드
+    } else {
+      heartColor = "#666666"; // 회색 (죽음)
+    }
+
+    for (let row = 0; row < heartPattern.length; row++) {
+      for (let col = 0; col < heartPattern[row].length; col++) {
+        if (heartPattern[row][col] === 1) {
+          // 메인 하트 색상
+          this.backgroundCtx.fillStyle = heartColor;
+          this.backgroundCtx.fillRect(
+            x + col * pixelSize,
+            y + row * pixelSize,
+            pixelSize,
+            pixelSize
+          );
+        }
+      }
+    }
   }
 
   /**
