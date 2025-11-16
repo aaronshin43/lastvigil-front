@@ -186,7 +186,83 @@
     <canvas id="circle-canvas"></canvas>
 
     <!-- all.png 이미지 -->
-    <img id="all-image" src="./public/assets/maps/asl_example.png" alt="All Skills" />
+    <img
+      id="all-image"
+      src="./public/assets/maps/asl_example.png"
+      alt="All Skills"
+    />
+
+    <!-- 상단 프레임 이미지 -->
+    <img
+      id="top-frame"
+      src="./public/assets/Status/frame.png"
+      alt="Top Frame"
+      style="
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 800px;
+        height: auto;
+        z-index: 100;
+        pointer-events: none;
+      "
+    />
+
+    <!-- 중앙 상단 Status2 이미지 -->
+    <img
+      id="status2-display"
+      src="./public/assets/Status/status2.png"
+      alt="Status Display"
+      style="
+        position: fixed;
+        top: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 1000px;
+        height: auto;
+        z-index: 101;
+        pointer-events: none;
+      "
+    />
+
+    <!-- Guide 버튼 (Status2 우상단) -->
+    <img
+      id="guide-button"
+      src="./public/assets/Status/Guide.png"
+      alt="Guide Button"
+      style="
+        position: fixed;
+        top: 7px;
+        left: 1050px;
+        width: 200px;
+        height: auto;
+        z-index: 102;
+        cursor: pointer;
+        transition: transform 0.2s;
+      "
+      onmouseover="this.style.transform='scale(1.1)'"
+      onmouseout="this.style.transform='scale(1)'"
+    />
+
+    <!-- Skip 버튼 (Guide 버튼 아래) -->
+    <img
+      id="skip-button"
+      src="./public/assets/Status/Skip.png"
+      alt="Skip Button"
+      style="
+        position: fixed;
+        top: 5px;
+        left: 930px;
+        width: 150px;
+        height: auto;
+        z-index: 102;
+        cursor: pointer;
+        transition: transform 0.2s;
+      "
+      onmouseover="this.style.transform='scale(1.1)'"
+      onmouseout="this.style.transform='scale(1)'"
+    />
 
     <!-- 게임 UI -->
     <div id="game-ui">
@@ -203,25 +279,30 @@
     </div>
 
     <!-- 제스처 시퀀스 UI -->
-    <div id="gesture-sequence-ui" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 150; text-align: center;">
-      <div id="gesture-sequence" style="font-size: 72px; font-weight: bold; color: #FFD700; text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 215, 0, 0.5); letter-spacing: 20px; font-family: 'Arial Black', sans-serif;"></div>
+    <div
+      id="gesture-sequence-ui"
+      style="
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 150;
+        text-align: center;
+      "
+    >
+      <div
+        id="gesture-sequence"
+        style="
+          font-size: 72px;
+          font-weight: bold;
+          color: #ffd700;
+          text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.9),
+            0 0 20px rgba(255, 215, 0, 0.5);
+          letter-spacing: 20px;
+          font-family: 'Arial Black', sans-serif;
+        "
+      ></div>
     </div>
-
-    <button id="webcam-toggle">Start Webcam</button>
-    <button id="effect-test-btn">Test Effect</button>
-    <button id="skill-guide-toggle">Skill Guide</button>
-    <button id="skip-gesture-btn">Skip Gesture</button>
-    <select id="effect-selector">
-      <option value="fireHammerRed">Fire Hammer (Red)</option>
-      <option value="fireSlash">Fire Slash</option>
-      <option value="fireVortexRed">Fire Vortex (Red)</option>
-      <option value="fireHurricaneBlue">Fire Hurricane (Blue)</option>
-      <option value="meteorShowerRed">Meteor Shower (Red)</option>
-      <option value="tornado">Tornado</option>
-      <option value="lightningV1">Lightning V1</option>
-      <option value="lightningV2">Lightning V2</option>
-      <option value="skyBeam">Sky Beam</option>
-    </select>
 
     <div id="canvas-container">
       <video id="video" width="640" height="480" autoplay playsinline></video>
