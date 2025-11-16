@@ -40,6 +40,9 @@ const MAX_SCROLL_SPEED = 50; // 최대 스크롤 속도
 let currentWave = 0; // 0으로 초기화하여 첫 웨이브도 감지
 let isShowingWaveAnnouncement = false; // 웨이브 공지 표시 중인지 확인
 
+// 제스처 시퀀스 추적
+let currentGestureSequence: string | string[] = "";
+
 // 게임 초기화 상태
 let isGameInitialized = false;
 
@@ -175,6 +178,9 @@ function initializeGame() {
     // 11. 맵 스크롤 로직 시작
     startScrollLoop();
 
+    // 12. 웹캠 자동 시작
+    startWebcam();
+
     // 초기화 완료 플래그 설정
     isGameInitialized = true;
     console.log("✅ 게임 초기화 완료!");
@@ -271,7 +277,19 @@ function processServerData(response: any) {
     // 제스처 시퀀스 UI 업데이트
     const gestureSequenceElement = document.getElementById("gesture-sequence");
     if (gestureSequenceElement && response.gameState.gestureSequence) {
-      gestureSequenceElement.textContent = response.gameState.gestureSequence;
+      // 배열이면 join, 문자열이면 그대로 사용
+      const sequenceText = Array.isArray(response.gameState.gestureSequence)
+        ? response.gameState.gestureSequence.join("")
+        : response.gameState.gestureSequence;
+      
+      gestureSequenceElement.textContent = sequenceText;
+      currentGestureSequence = response.gameState.gestureSequence;
+      
+      // 가이드가 현재 열려있다면 업데이트
+      const aslGuideContainer = document.getElementById("asl-guide-container");
+      if (aslGuideContainer && aslGuideContainer.style.display === "block") {
+        updateASLGuide();
+      }
     }
 
     // 제스처 시퀀스 매칭 성공 시 공격 애니메이션 실행
@@ -328,110 +346,21 @@ function processServerData(response: any) {
  * UI 이벤트 설정
  */
 function setupUIEvents() {
-  const webcamToggleBtn = document.getElementById(
-    "webcam-toggle"
-  ) as HTMLButtonElement;
-  const effectTestBtn = document.getElementById(
-    "effect-test-btn"
-  ) as HTMLButtonElement;
-  const effectSelector = document.getElementById(
-    "effect-selector"
-  ) as HTMLSelectElement;
-  const skillGuideToggleBtn = document.getElementById(
-    "skill-guide-toggle"
-  ) as HTMLButtonElement;
-  const skipGestureBtn = document.getElementById(
-    "skip-gesture-btn"
-  ) as HTMLButtonElement;
   const skipButtonImg = document.getElementById(
     "skip-button"
   ) as HTMLImageElement;
-  const allImage = document.getElementById("all-image") as HTMLImageElement;
+  const guideButton = document.getElementById(
+    "guide-button"
+  ) as HTMLImageElement;
+  const aslGuideContainer = document.getElementById(
+    "asl-guide-container"
+  ) as HTMLDivElement;
 
   console.log("🎮 UI 이벤트 설정 중...", {
-    webcamToggleBtn,
-    effectTestBtn,
-    effectSelector,
-    skillGuideToggleBtn,
-    skipGestureBtn,
     skipButtonImg,
+    guideButton,
+    aslGuideContainer,
   });
-
-  // 웹캠 토글
-  if (webcamToggleBtn) {
-    webcamToggleBtn.addEventListener("click", () => {
-      console.log("웹캠 토글 클릭");
-      if (webcamActive) {
-        stopWebcam();
-      } else {
-        startWebcam();
-      }
-    });
-  } else {
-    console.error("❌ webcam-toggle 버튼을 찾을 수 없습니다.");
-  }
-
-  // 이펙트 테스트
-  if (effectTestBtn && effectSelector) {
-    effectTestBtn.addEventListener("click", () => {
-      const selectedEffect = effectSelector.value;
-      console.log(
-        `🎆 이펙트 테스트 버튼 클릭! 선택된 이펙트: ${selectedEffect}`
-      );
-      const pos = gazeCursor.getPosition();
-      // console.log("현재 커서 위치:", pos);
-
-      // 테스트용 이펙트를 게임 상태로 추가
-      // 백엔드와 동일한 형식: x는 정규화된 좌표 (0~1)
-      const normalizedX = pos.x / window.innerWidth;
-
-      const testGameState = game.getLatestGameState();
-      testGameState.effects = [
-        {
-          id: `test_${Date.now()}`,
-          type: selectedEffect,
-          x: normalizedX, // 정규화된 x 좌표 (0.0~1.0)
-        },
-      ];
-      // console.log(`📍 스킬 발동 좌표: normalizedX=${normalizedX.toFixed(3)} (픽셀: ${pos.x.toFixed(0)})`);
-      game.updateGameState(testGameState);
-    });
-  } else {
-    console.error(
-      "❌ effect-test-btn 버튼 또는 effect-selector를 찾을 수 없습니다."
-    );
-  }
-
-  // 스킬 가이드 토글
-  if (skillGuideToggleBtn && allImage) {
-    skillGuideToggleBtn.addEventListener("click", () => {
-      allImage.classList.toggle("visible");
-      const isVisible = allImage.classList.contains("visible");
-      skillGuideToggleBtn.textContent = isVisible
-        ? "Hide Guide"
-        : "Skill Guide";
-      console.log(`📖 스킬 가이드 ${isVisible ? "표시" : "숨김"}`);
-    });
-  } else {
-    console.error(
-      "❌ skill-guide-toggle 버튼 또는 all-image를 찾을 수 없습니다."
-    );
-  }
-
-  // 스킬 건너뛰기 버튼 (기존 버튼)
-  if (skipGestureBtn) {
-    skipGestureBtn.addEventListener("click", () => {
-      console.log("⏭️ 스킬 건너뛰기 요청");
-      if (network && network.isConnected()) {
-        network.send(JSON.stringify({ type: "skipGesture" }));
-        console.log("📤 skipGesture 메시지 전송");
-      } else {
-        console.warn("⚠️ 서버에 연결되지 않았습니다.");
-      }
-    });
-  } else {
-    console.error("❌ skip-gesture-btn 버튼을 찾을 수 없습니다.");
-  }
 
   // 새 스킵 버튼 이미지
   if (skipButtonImg) {
@@ -447,6 +376,89 @@ function setupUIEvents() {
   } else {
     console.error("❌ skip-button 이미지를 찾을 수 없습니다.");
   }
+
+  // Guide 버튼 클릭 - ASL 제스처 가이드 토글
+  if (guideButton && aslGuideContainer) {
+    let isGuideVisible = false;
+    
+    guideButton.addEventListener("click", () => {
+      isGuideVisible = !isGuideVisible;
+      
+      if (isGuideVisible) {
+        // 가이드 표시
+        updateASLGuide();
+        console.log("📖 ASL 제스처 가이드 표시");
+      } else {
+        // 가이드 숨김
+        aslGuideContainer.style.display = "none";
+        console.log("📖 ASL 제스처 가이드 숨김");
+      }
+    });
+  } else {
+    console.error("❌ guide-button 또는 asl-guide-container를 찾을 수 없습니다.");
+  }
+}
+
+/**
+ * ASL 제스처 가이드 업데이트 (현재 시퀀스에 맞춰)
+ */
+function updateASLGuide() {
+  const aslGuideContainer = document.getElementById("asl-guide-container") as HTMLDivElement;
+  const aslGuideImages = document.getElementById("asl-guide-images") as HTMLDivElement;
+  
+  if (!aslGuideContainer || !aslGuideImages) {
+    console.error("❌ ASL 가이드 컨테이너를 찾을 수 없습니다.");
+    return;
+  }
+
+  // 현재 제스처 시퀀스가 없으면 숨김
+  if (!currentGestureSequence) {
+    console.warn("⚠️ 현재 제스처 시퀀스가 없습니다.", currentGestureSequence);
+    aslGuideContainer.style.display = "none";
+    return;
+  }
+
+  // 배열이면 그대로 사용, 문자열이면 split
+  const letters = Array.isArray(currentGestureSequence)
+    ? currentGestureSequence
+    : currentGestureSequence.split("");
+  
+  // 빈 배열이면 숨김
+  if (letters.length === 0) {
+    console.warn("⚠️ 제스처 시퀀스가 비어있습니다.");
+    aslGuideContainer.style.display = "none";
+    return;
+  }
+
+  // 기존 이미지 모두 제거
+  aslGuideImages.innerHTML = "";
+  
+  console.log(`📖 ASL 가이드 생성:`, letters, `(${letters.length}개 문자)`);
+  
+  letters.forEach((letter) => {
+    const upperLetter = letter.toUpperCase();
+    
+    const imgWrapper = document.createElement("div");
+    imgWrapper.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    `;
+
+    const img = document.createElement("img");
+    img.src = `./assets/asl_example/asl_${upperLetter.toLowerCase()}.png`;
+    img.alt = `ASL ${upperLetter}`;
+    img.style.cssText = `
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+    `;
+
+    imgWrapper.appendChild(img);
+    aslGuideImages.appendChild(imgWrapper);
+  });
+
+  aslGuideContainer.style.display = "block";
 }
 
 /**
@@ -458,24 +470,37 @@ function startWebcam() {
     .then((stream) => {
       webcamStream = stream;
       const video = document.getElementById("video") as HTMLVideoElement;
+      
+      if (!video) {
+        console.error("❌ video 엘리먼트를 찾을 수 없습니다.");
+        return;
+      }
+      
       video.srcObject = stream;
 
       video.onloadedmetadata = () => {
         webcamActive = true;
-        const btn = document.getElementById(
-          "webcam-toggle"
-        ) as HTMLButtonElement;
-        btn.textContent = "Stop Webcam";
-        btn.classList.add("active");
+        
+        // // 버튼이 있으면 업데이트 (없어도 계속 진행)
+        // const btn = document.getElementById("webcam-toggle") as HTMLButtonElement;
+        // if (btn) {
+        //   btn.textContent = "Stop Webcam";
+        //   btn.classList.add("active");
+        // }
 
         // 프레임 전송 시작 (20fps)
         sendInterval = window.setInterval(() => {
           sendFrameToServer();
         }, 50);
       };
+      
+      // play() 명시적으로 호출 (자동 재생을 위해)
+      video.play().catch(err => {
+        console.error("❌ 비디오 재생 실패:", err);
+      });
     })
     .catch((err) => {
-      console.error("웹캠 오류:", err);
+      console.error("❌ 웹캠 오류:", err);
       alert("웹캠을 활성화할 수 없습니다.");
     });
 }
@@ -515,11 +540,24 @@ function stopWebcam() {
  * 프레임을 서버로 전송
  */
 function sendFrameToServer() {
-  if (!network.isConnected()) return;
+  if (!network.isConnected()) {
+    console.warn("⚠️ 서버 연결 끊김 - 프레임 전송 불가");
+    return;
+  }
 
   const video = document.getElementById("video") as HTMLVideoElement;
   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-  const context = canvas.getContext("2d")!;
+  
+  if (!video || !canvas) {
+    console.error("❌ video 또는 canvas 엘리먼트를 찾을 수 없습니다.");
+    return;
+  }
+  
+  const context = canvas.getContext("2d");
+  if (!context) {
+    console.error("❌ canvas context를 가져올 수 없습니다.");
+    return;
+  }
 
   context.drawImage(video, 0, 0, canvas.width, canvas.height);
   const dataUrl = canvas.toDataURL("image/jpeg", 0.7);

@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Last Vigil - Vultr AI Game</title>
+    <!-- Google Fonts - 고전적인 세리프 폰트 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Text:wght@400;700&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
     <style>
       body {
         margin: 0;
@@ -43,115 +47,6 @@
       video {
         display: none;
       }
-      #webcam-toggle {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 30px;
-        font-size: 16px;
-        background: #4caf50;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        z-index: 100;
-        font-weight: bold;
-      }
-      #webcam-toggle:hover {
-        background: #45a049;
-      }
-      #webcam-toggle.active {
-        background: #f44336;
-      }
-      #effect-test-btn {
-        position: fixed;
-        top: 70px;
-        right: 20px;
-        padding: 15px 30px;
-        font-size: 16px;
-        background: #ff9800;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        z-index: 100;
-        font-weight: bold;
-      }
-      #effect-test-btn:hover {
-        background: #f57c00;
-      }
-      #effect-selector {
-        position: fixed;
-        top: 120px;
-        right: 20px;
-        padding: 10px 15px;
-        font-size: 14px;
-        background: #fff;
-        color: #333;
-        border: 2px solid #ff9800;
-        border-radius: 5px;
-        cursor: pointer;
-        z-index: 100;
-        font-weight: bold;
-        min-width: 180px;
-      }
-      #effect-selector:hover {
-        background: #f5f5f5;
-      }
-
-      /* all.png 이미지 */
-      #all-image {
-        position: fixed;
-        top: 0px;
-        left: 0px;
-        width: 300px; /* 원본의 50% */
-        height: auto;
-        z-index: 90;
-        opacity: 0.9;
-        display: none; /* 기본적으로 숨김 */
-      }
-      #all-image.visible {
-        display: block;
-      }
-
-      /* 스킬 가이드 토글 버튼 */
-      #skill-guide-toggle {
-        position: fixed;
-        top: 170px;
-        right: 20px;
-        padding: 15px 30px;
-        font-size: 16px;
-        background: #2196f3;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        z-index: 100;
-        font-weight: bold;
-      }
-      #skill-guide-toggle:hover {
-        background: #1976d2;
-      }
-
-      /* 스킬 건너뛰기 버튼 */
-      #skip-gesture-btn {
-        position: fixed;
-        top: 220px;
-        right: 20px;
-        padding: 15px 30px;
-        font-size: 16px;
-        background: #9c27b0;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        z-index: 100;
-        font-weight: bold;
-      }
-      #skip-gesture-btn:hover {
-        background: #7b1fa2;
-      }
-
       /* 게임 UI */
       #game-ui {
         position: fixed;
@@ -184,13 +79,6 @@
     
     <canvas id="background-canvas"></canvas>
     <canvas id="circle-canvas"></canvas>
-
-    <!-- all.png 이미지 -->
-    <img
-      id="all-image"
-      src="./public/assets/maps/asl_example.png"
-      alt="All Skills"
-    />
 
     <!-- 상단 프레임 이미지 -->
     <img
@@ -283,7 +171,7 @@
       id="gesture-sequence-ui"
       style="
         position: fixed;
-        top: 50%;
+        top: 20%;
         left: 50%;
         transform: translate(-50%, -50%);
         z-index: 150;
@@ -295,13 +183,45 @@
         style="
           font-size: 72px;
           font-weight: bold;
-          color: #ffd700;
+          color: rgba(0,0,0);
           text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.9),
-            0 0 20px rgba(255, 215, 0, 0.5);
-          letter-spacing: 20px;
-          font-family: 'Arial Black', sans-serif;
+            0 0 20px rgba(0, 0, 0, 0.5);
+          letter-spacing: 50px;
+          font-family: 'IM Fell English SC', 'Cinzel', 'Crimson Text', serif;
         "
       ></div>
+    </div>
+
+    <!-- ASL 제스처 가이드 UI (guide 버튼 클릭 시 표시) -->
+    <div
+      id="asl-guide-container"
+      style="
+        position: fixed;
+        top: 30%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 149;
+        text-align: center;
+        display: none;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 90vw;
+        max-height: 60vh;
+        overflow-y: auto;
+      "
+    >
+      <div
+        id="asl-guide-images"
+        style="
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          justify-content: center;
+        "
+      >
+        <!-- ASL 이미지들이 동적으로 추가됩니다 -->
+      </div>
     </div>
 
     <div id="canvas-container">
