@@ -12,6 +12,7 @@ import { Camera } from "./core/Camera";
 import { LandingScreen } from "./core/LandingScreen";
 import { CountdownScreen } from "./core/CountdownScreen";
 import { GameOverScreen } from "./core/GameOverScreen";
+import { AudioManager } from "./core/AudioManager";
 
 // Global state management
 let assetLoader: AssetLoader;
@@ -23,6 +24,7 @@ let camera: Camera;
 let landingScreen: LandingScreen;
 let countdownScreen: CountdownScreen;
 let gameOverScreen: GameOverScreen;
+let audioManager: AudioManager;
 
 // Webcam management
 let webcamActive = false;
@@ -58,6 +60,10 @@ async function init() {
     // console.log("📦 Loading assets...");
     await assetLoader.loadAll();
     // console.log("✅ Asset loading complete!");
+
+    // 1-1. AudioManager Init (BGM)
+    audioManager = new AudioManager("/assets/music/background.mp3");
+    // console.log("🎵 AudioManager Initialized");
 
     // 2. Initialize LandingScreen and display
     landingScreen = new LandingScreen({
@@ -98,6 +104,10 @@ async function init() {
 function startGame() {
   // console.log("🚀 Preparing to start game!");
 
+  // Start BGM
+  audioManager.play();
+  // console.log("🎵 BGM started");
+
   // Hide landing screen
   landingScreen.hide();
 
@@ -108,7 +118,7 @@ function startGame() {
   countdownScreen = new CountdownScreen({
     canvasId: "countdown-canvas",
   });
-  
+
   countdownScreen.startInitialCountdown(() => {
     // console.log("⏱️ Countdown complete! Starting game");
     // Show UI elements again
@@ -169,6 +179,7 @@ function initializeGame() {
       renderer,
       gazeCursor,
       camera,
+      audioManager,
     });
 
     // 8. Initialize Network (WebSocket)
@@ -288,7 +299,7 @@ function processServerData(response: any) {
       const sequenceText = Array.isArray(response.gameState.gestureSequence)
         ? response.gameState.gestureSequence.join("")
         : response.gameState.gestureSequence;
-      
+
       gestureSequenceElement.textContent = sequenceText;
       currentGestureSequence = response.gameState.gestureSequence;
       
@@ -362,11 +373,15 @@ function setupUIEvents() {
   const aslGuideContainer = document.getElementById(
     "asl-guide-container"
   ) as HTMLDivElement;
+  const muteButton = document.getElementById(
+    "mute-button"
+  ) as HTMLButtonElement;
 
   console.log("🎮 Setting up UI events...", {
     skipButtonImg,
     guideButton,
     aslGuideContainer,
+    muteButton,
   });
 
   // New skip button image
@@ -387,10 +402,10 @@ function setupUIEvents() {
   // Guide button click - Toggle ASL gesture guide
   if (guideButton && aslGuideContainer) {
     let isGuideVisible = false;
-    
+
     guideButton.addEventListener("click", () => {
       isGuideVisible = !isGuideVisible;
-      
+
       if (isGuideVisible) {
         // Show guide
         updateASLGuide();
@@ -404,15 +419,34 @@ function setupUIEvents() {
   } else {
     console.error("❌ Cannot find guide-button or asl-guide-container.");
   }
+
+  // Mute Button Click
+  if (muteButton) {
+    // Initialize button status
+    muteButton.textContent = audioManager.getMuteState() ? "🔇" : "🔊";
+
+    muteButton.addEventListener("click", () => {
+      audioManager.toggleMute();
+      const isMuted = audioManager.getMuteState();
+      muteButton.textContent = isMuted ? "🔇" : "🔊";
+      // console.log(`🔊 BGM ${isMuted ? "Muted" : "Unmuted"}`);
+    });
+  } else {
+    console.error("❌ Couldn't find mute-button.");
+  }
 }
 
 /**
  * Update ASL gesture guide (according to current sequence)
  */
 function updateASLGuide() {
-  const aslGuideContainer = document.getElementById("asl-guide-container") as HTMLDivElement;
-  const aslGuideImages = document.getElementById("asl-guide-images") as HTMLDivElement;
-  
+  const aslGuideContainer = document.getElementById(
+    "asl-guide-container"
+  ) as HTMLDivElement;
+  const aslGuideImages = document.getElementById(
+    "asl-guide-images"
+  ) as HTMLDivElement;
+
   if (!aslGuideContainer || !aslGuideImages) {
     console.error("❌ Cannot find ASL guide container.");
     return;
@@ -444,7 +478,7 @@ function updateASLGuide() {
   
   letters.forEach((letter) => {
     const upperLetter = letter.toUpperCase();
-    
+
     const imgWrapper = document.createElement("div");
     imgWrapper.style.cssText = `
       display: flex;
@@ -477,12 +511,12 @@ function startWebcam() {
     .then((stream) => {
       webcamStream = stream;
       const video = document.getElementById("video") as HTMLVideoElement;
-      
+
       if (!video) {
         console.error("❌ Cannot find video element.");
         return;
       }
-      
+
       video.srcObject = stream;
 
       video.onloadedmetadata = () => {
@@ -554,12 +588,12 @@ function sendFrameToServer() {
 
   const video = document.getElementById("video") as HTMLVideoElement;
   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-  
+
   if (!video || !canvas) {
     console.error("❌ Cannot find video or canvas element.");
     return;
   }
-  
+
   const context = canvas.getContext("2d");
   if (!context) {
     console.error("❌ Cannot get canvas context.");
@@ -666,13 +700,15 @@ function hideGameUI() {
   const status2 = document.getElementById("status2-display");
   const guideButton = document.getElementById("guide-button");
   const skipButton = document.getElementById("skip-button");
+  const muteButton = document.getElementById("mute-button");
   const gameUI = document.getElementById("game-ui");
   const topFrame = document.getElementById("top-frame");
   const scoreImage = document.getElementById("score-image");
-  
+
   if (status2) status2.style.display = "none";
   if (guideButton) guideButton.style.display = "none";
   if (skipButton) skipButton.style.display = "none";
+  if (muteButton) muteButton.style.display = "none";
   if (gameUI) gameUI.style.display = "none";
   if (topFrame) topFrame.style.display = "none";
   if (scoreImage) scoreImage.style.display = "none";
@@ -685,13 +721,15 @@ function showGameUI() {
   const status2 = document.getElementById("status2-display");
   const guideButton = document.getElementById("guide-button");
   const skipButton = document.getElementById("skip-button");
+  const muteButton = document.getElementById("mute-button");
   const gameUI = document.getElementById("game-ui");
   const topFrame = document.getElementById("top-frame");
   const scoreImage = document.getElementById("score-image");
-  
+
   if (status2) status2.style.display = "block";
   if (guideButton) guideButton.style.display = "block";
   if (skipButton) skipButton.style.display = "block";
+  if (muteButton) muteButton.style.display = "flex";
   if (gameUI) gameUI.style.display = "block";
   if (topFrame) topFrame.style.display = "block";
   if (scoreImage) scoreImage.style.display = "block";
