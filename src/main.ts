@@ -134,83 +134,16 @@ function initNetwork() {
  * 서버 데이터 처리
  */
 function processServerData(response: any) {
-  // 1. 시선 데이터 처리 - 서버의 gaze 객체 우선 사용
+  // 1. 시선 데이터 처리 - 서버에서 정규화된 좌표 수신
   if (response.gaze) {
-    // 서버에서 이미 계산된 정규화된 좌표(0~1) 사용
-    const { x, y } = response.gaze;
+    const { gaze_x, gaze_y } = response.gaze;
 
     // 화면 좌표로 변환
-    const targetX = x * window.innerWidth;
-    const targetY = y * window.innerHeight;
+    const targetX = gaze_x * window.innerWidth;
+    const targetY = gaze_y * window.innerHeight;
 
-    // GazeCursor 업데이트
+    // GazeCursor 업데이트 (clampToBounds는 GazeCursor 내부에서 처리)
     gazeCursor.setTarget(targetX, targetY);
-    gazeCursor.clampToBounds(window.innerWidth, window.innerHeight);
-  } else if (response.face_key_points) {
-    // 백업: 서버가 gaze를 보내지 않으면 기존 방식 사용 (레거시)
-    const data = response.face_key_points;
-
-    if (
-      data &&
-      data.nose_tip &&
-      data.chin &&
-      data.forehead &&
-      data.left_face &&
-      data.right_face &&
-      data.left_eye &&
-      data.right_eye
-    ) {
-      const {
-        nose_tip,
-        chin,
-        forehead,
-        left_face,
-        right_face,
-        left_eye,
-        right_eye,
-      } = data;
-
-      // 얼굴 중심점 계산
-      const face_center_x = (left_eye.x + right_eye.x) / 2;
-      const face_center_y = (left_eye.y + right_eye.y) / 2;
-
-      // Yaw (좌우 회전) 계산
-      const left_distance = Math.abs(nose_tip.x - left_face.x);
-      const right_distance = Math.abs(nose_tip.x - right_face.x);
-      const face_width = Math.abs(right_face.x - left_face.x);
-
-      let yaw_ratio = 0.0;
-      if (face_width > 0) {
-        yaw_ratio = (left_distance - right_distance) / face_width;
-      }
-
-      // Pitch (상하 회전) 계산
-      const nose_to_forehead = Math.abs(nose_tip.y - forehead.y);
-      const nose_to_chin = Math.abs(nose_tip.y - chin.y);
-      const face_height = Math.abs(chin.y - forehead.y);
-
-      let pitch_ratio = 0.0;
-      if (face_height > 0) {
-        pitch_ratio = (nose_to_chin - nose_to_forehead) / face_height + 0.15;
-      }
-
-      // 시선 좌표 매핑
-      const gaze_scale_x = 1.5;
-      const gaze_scale_y = 6.0;
-
-      const gaze_x = face_center_x - yaw_ratio * gaze_scale_x;
-      const gaze_y = face_center_y - pitch_ratio * gaze_scale_y;
-
-      // GazeCursor 업데이트
-      const targetX = gaze_x * window.innerWidth;
-      const targetY = gaze_y * window.innerHeight;
-
-      gazeCursor.setTarget(targetX, targetY);
-      gazeCursor.clampToBounds(window.innerWidth, window.innerHeight);
-    }
-  } else {
-    // 데이터가 없을 때 중앙으로
-    gazeCursor.setTarget(window.innerWidth / 2, window.innerHeight / 2);
   }
 
   // 2. 제스처 데이터 처리
@@ -235,12 +168,13 @@ function processServerData(response: any) {
 
   // 3. ✨ 게임 상태 데이터 처리 (20fps로 업데이트)
   if (response.gameState) {
-    console.log(`🎮 게임 상태 업데이트:`, {
-      enemies: response.gameState.enemies?.length || 0,
-      effects: response.gameState.effects?.length || 0,
-      score: response.gameState.playerScore,
-      wave: response.gameState.waveNumber,
-    });
+    // console.log(`🎮 게임 상태 업데이트:`, {
+    //   enemies: response.gameState.enemies?.length || 0,
+    //   effects: response.gameState.effects?.length || 0,
+    //   effectsData: response.gameState.effects, // 🔍 이펙트 데이터 상세 확인
+    //   score: response.gameState.playerScore,
+    //   wave: response.gameState.waveNumber,
+    // });
 
     // Game 클래스에 전달하여 렌더링
     game.updateGameState(response.gameState);

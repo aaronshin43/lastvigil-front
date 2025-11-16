@@ -22,10 +22,6 @@ export interface GameStateData {
     x: number;
     y: number;
   }[];
-  gazePosition: {
-    x: number;
-    y: number;
-  };
   playerGold?: number;
   playerScore?: number;
   waveNumber?: number;
@@ -54,7 +50,6 @@ export class Game {
   private latestGameState: GameStateData = {
     enemies: [],
     effects: [],
-    gazePosition: { x: 0, y: 0 },
   };
 
   constructor(config: GameConfig) {
@@ -103,10 +98,7 @@ export class Game {
   public updateGameState(state: GameStateData): void {
     this.latestGameState = state;
 
-    // 시선 위치 업데이트
-    if (state.gazePosition) {
-      this.gazeCursor.setTarget(state.gazePosition.x, state.gazePosition.y);
-    }
+    // 시선 위치는 main.ts의 processServerData()에서 처리하므로 여기서는 제거
 
     // 적 업데이트
     this.updateEnemies(state.enemies);
@@ -256,27 +248,27 @@ export class Game {
     ctx.strokeStyle = "black";
     ctx.lineWidth = 2;
 
-    const drawTextWithOutline = (text: string, x: number, y: number) => {
-      ctx.strokeText(text, x, y);
-      ctx.fillText(text, x, y);
-    };
+    // const drawTextWithOutline = (text: string, x: number, y: number) => {
+    //   ctx.strokeText(text, x, y);
+    //   ctx.fillText(text, x, y);
+    // };
 
-    const rightX = ctx.canvas.width - 20;
-    drawTextWithOutline(
-      `FPS: ${Math.round(1000 / (performance.now() - this.lastUpdateTime))}`,
-      rightX,
-      ctx.canvas.height - 60
-    );
-    drawTextWithOutline(
-      `Effects: ${this.activeEffects.length}`,
-      rightX,
-      ctx.canvas.height - 40
-    );
-    drawTextWithOutline(
-      `Enemies: ${enemyCount}`,
-      rightX,
-      ctx.canvas.height - 20
-    );
+    // const rightX = ctx.canvas.width - 20;
+    // drawTextWithOutline(
+    //   `FPS: ${Math.round(1000 / (performance.now() - this.lastUpdateTime))}`,
+    //   rightX,
+    //   ctx.canvas.height - 60
+    // );
+    // drawTextWithOutline(
+    //   `Effects: ${this.activeEffects.length}`,
+    //   rightX,
+    //   ctx.canvas.height - 40
+    // );
+    // drawTextWithOutline(
+    //   `Enemies: ${enemyCount}`,
+    //   rightX,
+    //   ctx.canvas.height - 20
+    // );
   }
 
   /**

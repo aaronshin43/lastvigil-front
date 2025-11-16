@@ -49,8 +49,9 @@ export class GazeCursor {
    * @param y 목표 Y 좌표
    */
   setTarget(x: number, y: number): void {
-    this.targetX = x;
-    this.targetY = y;
+    // 화면 경계 제한
+    this.targetX = Math.max(this.radius, Math.min(x, window.innerWidth - this.radius));
+    this.targetY = Math.max(this.radius, Math.min(y, window.innerHeight - this.radius));
   }
 
   /**
