@@ -434,6 +434,17 @@ function setupUIEvents() {
   } else {
     console.error("❌ Couldn't find mute-button.");
   }
+
+  // Keyboard shortcut: Press 'C' to toggle webcam visibility
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "c" || e.key === "C") {
+      const video = document.getElementById("video") as HTMLVideoElement;
+      if (video) {
+        video.classList.toggle("visible");
+        console.log(`📹 Webcam visibility toggled: ${video.classList.contains("visible") ? "visible" : "hidden"}`);
+      }
+    }
+  });
 }
 
 /**
