@@ -1,121 +1,116 @@
-# 1. 📖 Project: **The Last Vigil**
+# The Last Vigil
 
-## 한 줄 요약
+A 2D Gothic action defense game where players cast magic using real-time gaze tracking and ASL alphabet hand gestures via webcam. The game features a cloud-based architecture with AI analysis running on Vultr GPU servers.
 
-"플레이어의 **시선(Gaze)**과 **ASL 알파벳 손 제스처**를 실시간으로 분석해 마법을 시전하는 2D 고딕 액션 디펜스 게임입니다."
+## Features
 
-## 핵심 컨셉
+- **Gaze-Based Aiming**: Attack direction determined by player's eye movement (left/right screen gaze)
+- **ASL Gesture Magic**: Recognize specific hand gestures (A, C, L, S) to cast powerful spells
+- **Webcam-Only Control**: No mouse or keyboard required
+- **2D Pixel Art Style**: Gothic horror theme with zombies, skeletons, and magical effects
+- **Horizontal Scrolling Battlefield**: Paladins-inspired map design
+- **Cloud AI Processing**: Heavy computations handled by Vultr GPU servers for optimal performance
 
-플레이어는 마우스나 키보드를 사용하지 않고 **웹캠만으로** 게임을 조작합니다.
+## Architecture
 
-- **시선(Gaze) = 조준**
-    
-    화면의 좌우 어디를 보는지에 따라 공격 방향이 자동으로 결정됩니다.
-    
-- **ASL 제스처(Gesture) = 스킬 발동**
-    
-    A, C, L, S 같은 특정 알파벳 제스처를 인식해 강력한 마법을 발사합니다.
-    
+### Frontend (Client)
+- **Technology**: TypeScript, HTML5 Canvas, WebSocket
+- **Role**: Rendering engine and video transmitter
+- **Key Components**:
+  - `Renderer.ts`: 60fps rendering loop using requestAnimationFrame
+  - `AssetLoader.ts`: Preloads all PNG assets as Image objects
+  - `Game.ts`: Main game class managing enemies, effects, and player
+  - `Network.ts`: WebSocket connection to Vultr server
+  - `Camera.ts`: Handles viewport and scrolling
+  - Various screen classes: `LandingScreen.ts`, `CountdownScreen.ts`, `GameOverScreen.ts`
 
-## 테마 및 아트 스타일
+### Backend (Vultr Cloud GPU)
+- **Technology**: Python, FastAPI, MediaPipe, OpenCV
+- **Role**: AI analysis and game logic processing
+- **Functions**:
+  - Real-time webcam frame analysis
+  - ASL gesture recognition using trained MediaPipe models
+  - Gaze tracking with quantified values [-1, 1]
+  - Enemy spawning, movement, health, and collision detection
 
-- **테마:** 고딕 호러
-- **적:** 좀비, 해골 등
-- **비주얼 스타일:** 2D 픽셀 아트
-- **맵 구성:** 팔라독처럼 좌우로 길게 이어진 횡스크롤 전장
+## Installation
 
----
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/aaronshin43/lastvigil-front.git
+   cd lastvigil-front
+   ```
 
-# 🌟 핵심 아키텍처 (Vultr 스폰서 트랙)
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-이 프로젝트는 웹 게임처럼 보이지만 내부적으로는 **Vultr GPU 서버에서 AI 분석과 게임 로직을 수행하는 클라우드 기반 AI 시스템**입니다.
+3. Set up environment variables:
+   - Copy `.env.example` to `.env`
+   - Configure Vultr server settings:
+     ```
+     VITE_VULTR_SERVER_IP=your-server-ip
+     VITE_VULTR_SERVER_PORT=your-server-port
+     VITE_VULTR_SERVER_URL=ws://your-server-url
+     VITE_ENV=development
+     ```
 
-## 1. 프론트엔드 (Client): 렌더링과 효과 중심
+## Usage
 
-**기술:** JavaScript, Canvas 기반 렌더링, WebSocket
+### Development
+```bash
+npm run dev
+```
+Starts the Vite development server.
 
-**역할:**
+### Build
+```bash
+npm run build
+```
+Compiles TypeScript and builds for production.
 
-- 2D 맵 이미지와 적 스프라이트를 화면에 그립니다.
-- Vultr 서버로부터 받은 명령을 그대로 수행합니다.
-    - 예: "적 3번 제거", "폭발 이펙트 재생"
+### Preview
+```bash
+npm run preview
+```
+Previews the built application.
 
-## 2. 백엔드 (Vultr Cloud GPU): AI 분석과 게임 로직
+## Game Controls
 
-**기술:** Python, FastAPI WebSocket, MediaPipe, OpenCV
+- **Gaze**: Look left/right on screen to aim attacks
+- **Gestures**: Perform ASL alphabet signs to cast magic
+- **Guide Button**: Shows ASL gesture reference
+- **Skip Button**: Skip one alphabet
 
-**역할:**
+## Project Structure
 
-- 클라이언트가 보내는 웹캠 프레임을 GPU에서 실시간 분석
-- MediaPipe로 직접 학습한 **ASL 제스처 모델**을 사용
-- 시선 추적 모듈(OpenCV 기반)로 좌우 시선 방향 분석 및 “정량화된 시선값[-1, 1]” 전달
-- 적 생성, 이동, 체력, 충돌 판정 등 게임 로직 전부 서버에서 처리
+```
+lastvigil-front/
+├── public/
+│   └── assets/          # Game sprites, maps, VFX
+├── src/
+│   ├── core/            # Main game systems
+│   │   ├── AssetLoader.ts
+│   │   ├── Camera.ts
+│   │   ├── Game.ts
+│   │   ├── Renderer.ts
+│   │   └── *Screen.ts   # UI screens
+│   ├── gameplay/        # Game entities
+│   │   ├── Enemy.ts
+│   │   ├── Player.ts
+│   │   ├── Effect.ts
+│   │   └── types/       # Type definitions
+│   └── services/
+│       └── Network.ts   # WebSocket client
+├── index.html           # Main HTML file
+├── style.css            # Global styles
+└── main.ts              # Application entry point
+```
 
-**어필 포인트:**
+## Technologies Used
 
-로컬 성능에 의존하지 않고 **Vultr GPU가 모든 무거운 연산을 처리하는 클라우드형 디펜스 게임**입니다.
-
----
-
-# 2. 🚀 MVP 우선순위
-
-해커톤 기준으로 가장 빠른 구현 순서입니다.
-
-## 1단계: 맵과 화면 구성
-
-- [ ]  2D 배경 이미지 1장 로드
-- [ ]  화면 좌우가 긴 횡스크롤 맵 구성
-- [ ]  카메라는 중앙에서 고정된 형태로 단순하게 처리
-
-## 2단계: 적 시스템
-
-- [ ]  적 스프라이트 로드
-- [ ]  적이 왼쪽에서 오른쪽으로, 혹은 오른쪽에서 왼쪽으로 이동
-- [ ]  간단한 패턴으로 웨이브 없이 계속 스폰
-
-## 3단계: Vultr AI 브레인
-
-- [ ]  Vultr GPU 인스턴스 생성 후 FastAPI WebSocket 서버 오픈
-- [ ]  클라이언트에서 웹캠 프레임을 서버로 지속 전송
-- [ ]  서버에서 MediaPipe로 특정 ASL 알파벳 한 개만 우선 인식
-- [ ]  인식되면 WebSocket으로 클라이언트에 메시지 전송
-    - 예: {"gesture":"A"}
-
-## 4단계: 핵심 루프
-
-- [ ]  서버에서 시선 좌우 방향 판독
-- [ ]  서버는 ASL 제스처가 감지된 시점의 시선 방향을 기준으로 공격 방향 결정
-- [ ]  서버가 적이 공격 범위에 있는지 판정
-- [ ]  판정 후 클라이언트에 "적 X 제거" 명령 전송
-- [ ]  클라이언트는 해당 적을 화면에서 제거
-
-## 5단계: 피드백
-
-- [ ]  폭발 또는 마법 타격 이펙트 스프라이트 재생
-- [ ]  사운드는 외부 에셋을 그대로 재생 (API 사용 없음)
-
-## 프론트엔드 역할
-1. 🖥️ 프론트엔드 (Client): 영상 송신기와 "멍청한" 렌더러
-프론트엔드의 역할은 2개입니다: (1) 1초에 10번 서버에 "내 얼굴"을 보고하고, (2) 1초에 60번 서버가 "그리라는 것"을 그립니다.
-
-화면 띄우기 (렌더링 루프)
-프론트엔드는 requestAnimationFrame을 사용한 60fps의 메인 **"렌더링 루프"**를 가집니다.
-
-이 루프는 게임 로직을 절대 계산하지 않습니다.
-
-단지 let latestGameState = {} 라는 전역 JSON 객체를 참조합니다.
-
-매 프레임 (1/60초), 이 루프는 latestGameState를 기반으로 캔버스를 싹 지우고(clearRect) 맵을 그린 뒤, latestGameState.enemies 배열을 순회하며 좀비 스프라이트를 그리고, latestGameState.effects 배열을 순회하며 폭발 이펙트를 그립니다.
-
-웹캠 영상 전달 (데이터 송신)
-60fps의 렌더링 루프와 별개로, setInterval을 사용한 10fps (100ms)의 **"AI 송신 루프"**가 돕니다. (CPU를 아끼려면 5fps도 고려해야 합니다.)
-
-이 루프가 실행될 때마다:
-
-getUserMedia로 켠 <video> 태그의 현재 프레임을 보이지 않는 <canvas>에 그립니다.
-
-캔버스 해상도를 의도적으로 낮춥니다 (예: 320x240). (고해상도는 CPU 사망의 지름길입니다.)
-
-canvas.toDataURL('image/jpeg', 0.6)를 호출하여, 저해상도/저품질의 Base64 문자열을 생성합니다.
-
-이 10KB~20KB 크기의 텍스트 문자열을 WebSocket.send()로 Vultr 서버에 전송합니다.
+- **Frontend**: TypeScript, Vite, HTML5 Canvas
+- **Networking**: WebSocket for real-time communication
+- **Assets**: PNG spritesheets for animations
+- **AI Backend**: MediaPipe, OpenCV (handled by Vultr server)

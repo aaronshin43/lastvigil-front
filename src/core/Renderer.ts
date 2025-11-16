@@ -1,6 +1,6 @@
 /**
  * Renderer.ts
- * 60fps requestAnimationFrame 루프, 캔버스 초기화/그리기 총괄
+ * Manages the 60fps requestAnimationFrame loop and handles canvas initialization/drawing.
  */
 
 import type { Effect } from "../gameplay/Effect";
@@ -30,28 +30,28 @@ export class Renderer {
   private animationFrameId: number | null = null;
   private lastFrameTime: number = 0;
 
-  // 배경 이미지
+  // Background image
   private backgroundImage: HTMLImageElement | null = null;
 
-  // Witch 상태 (고정 위치, HP만 서버로부터 받음)
-  private witchX: number = 0.01; // 정규화된 x 좌표 (고정값)
-  private witchY: number = 0.8; // 정규화된 y 좌표 (고정값)
-  private witchHP: number = 100; // 현재 HP
-  private witchMaxHP: number = 100; // 최대 HP
+  // Witch state (fixed position, HP received from the server)
+  private witchX: number = 0.01; // Normalized x-coordinate (fixed value)
+  private witchY: number = 0.8; // Normalized y-coordinate (fixed value)
+  private witchHP: number = 100; // Current HP
+  private witchMaxHP: number = 100; // Maximum HP
   private witchIsDead: boolean = false;
 
-  // Wizard 애니메이션 상태
+  // Wizard animation state
   private wizardCurrentFrame: number = 0;
   private wizardElapsedTime: number = 0;
   private wizardAnimationState: "idle" | "hurt" | "attack" | "attack2" = "idle";
-  private previousWitchHP: number = 100; // HP 변화 감지용
+  private previousWitchHP: number = 100; // For detecting HP changes
 
-  // 렌더링할 객체들 (외부에서 주입)
+  // Objects to render (injected externally)
   private effects: Effect[] = [];
   private gazeCursor: GazeCursor | null = null;
 
   constructor(config: RendererConfig) {
-    // 배경 캔버스 초기화
+    // Initialize background canvas
     this.backgroundCanvas = document.getElementById(
       config.backgroundCanvasId
     ) as HTMLCanvasElement;
@@ -62,7 +62,7 @@ export class Renderer {
     }
     this.backgroundCtx = this.backgroundCanvas.getContext("2d")!;
 
-    // 게임 객체 캔버스 초기화
+    // Initialize game object canvas
     this.gameCanvas = document.getElementById(
       config.gameCanvasId
     ) as HTMLCanvasElement;
@@ -75,15 +75,15 @@ export class Renderer {
     this.camera = config.camera;
     this.assetLoader = config.assetLoader;
 
-    // 캠버스 크기 설정
+    // Set canvas size
     this.resizeCanvases();
 
-    // 윈도우 리사이즈 이벤트
+    // Window resize event
     window.addEventListener("resize", () => this.resizeCanvases());
   }
 
   /**
-   * 캔버스 크기를 윈도우 크기에 맞추기
+   * Adjust canvas size to match window size
    */
   private resizeCanvases(): void {
     const width = window.innerWidth;
@@ -94,14 +94,14 @@ export class Renderer {
     this.gameCanvas.width = width;
     this.gameCanvas.height = height;
 
-    // 배경 다시 그리기
+    // Redraw background
     if (this.backgroundImage) {
       this.drawBackground();
     }
   }
 
   /**
-   * 배경 이미지 설정
+   * Set background image
    */
   setBackgroundImage(image: HTMLImageElement): void {
     this.backgroundImage = image;
@@ -109,15 +109,15 @@ export class Renderer {
   }
 
   /**
-   * Witch HP 업데이트 (서버로부터 받음, 위치는 고정)
+   * Update Witch HP (received from the server, position is fixed)
    */
   updateWitchHP(currentHP: number, maxHP: number, isDead: boolean): void {
-    // HP가 감소하면 hurt 애니메이션 실행
+    // Trigger hurt animation if HP decreases
     if (currentHP < this.previousWitchHP && currentHP > 0) {
       this.wizardAnimationState = "hurt";
       this.wizardCurrentFrame = 0;
       this.wizardElapsedTime = 0;
-      console.log("💥 플레이어 피격!");
+      // console.log("💥 Player hit!");
     }
 
     this.previousWitchHP = currentHP;
@@ -127,10 +127,10 @@ export class Renderer {
   }
 
   /**
-   * 공격 애니메이션 실행 (attack 또는 attack2 랜덤 선택)
+   * Trigger attack animation (randomly selects attack or attack2)
    */
   playAttackAnimation(): void {
-    // 이미 공격 중이거나 hurt 애니메이션 중이면 무시
+    // Ignore if already attacking or in hurt animation
     if (
       this.wizardAnimationState === "attack" ||
       this.wizardAnimationState === "attack2" ||
@@ -139,19 +139,19 @@ export class Renderer {
       return;
     }
 
-    // 랜덤으로 attack 또는 attack2 선택
+    // Randomly select attack or attack2
     const attackType = Math.random() < 0.5 ? "attack" : "attack2";
     this.wizardAnimationState = attackType;
     this.wizardCurrentFrame = 0;
     this.wizardElapsedTime = 0;
-    console.log(`⚔️ 공격 애니메이션 실행: ${attackType}`);
+    // console.log(`⚔️ Attack animation triggered: ${attackType}`);
   }
 
   /**
-   * 배경 다시 그리기 (외부에서 호출 가능)
+   * Redraw background (can be called externally)
    */
   public redrawBackground(deltaTime?: number): void {
-    // Wizard 애니메이션 업데이트
+    // Update Wizard animation
     if (deltaTime !== undefined) {
       this.updateWizardAnimation(deltaTime);
     }
@@ -159,7 +159,7 @@ export class Renderer {
   }
 
   /**
-   * 배경 이미지 그리기 (Camera 기반)
+   * Draw background image (based on Camera)
    */
   private drawBackground(): void {
     this.backgroundCtx.clearRect(
@@ -174,7 +174,7 @@ export class Renderer {
       !this.backgroundImage.complete ||
       this.backgroundImage.naturalWidth === 0
     ) {
-      // 이미지가 없으면 단색 배경
+      // Draw solid background if no image
       this.backgroundCtx.fillStyle = this.backgroundColor;
       this.backgroundCtx.fillRect(
         0,
@@ -185,26 +185,26 @@ export class Renderer {
       return;
     }
 
-    // 배경 이미지를 월드 크기에 맞춰 그리기
+    // Draw background image to match world size
     const worldWidth = this.camera.getWorldWidth();
     const viewportHeight = this.backgroundCanvas.height;
 
-    // 화면을 꽉 채우도록 설정
+    // Set to fill the screen
     const imageWidth = worldWidth;
-    const imageHeight = viewportHeight; // 화면 높이에 맞춤 (종횡비 무시)
+    const imageHeight = viewportHeight; // Match screen height (ignore aspect ratio)
 
-    // 카메라 오프셋 적용 (배경이 월드와 함께 스크롤)
+    // Apply camera offset (background scrolls with the world)
     const cameraOffset = -this.camera.getOffsetX();
 
     this.backgroundCtx.drawImage(
       this.backgroundImage,
       cameraOffset,
-      0, // yOffset 제거, 상단부터 그리기
+      0, // Remove yOffset, draw from the top
       imageWidth,
       imageHeight
     );
 
-    // Wizard 그리기 (서버에서 받은 witch 좌표 사용)
+    // Draw Wizard (using coordinates received from the server)
     const wizardImage = this.assetLoader.getWizard(this.wizardAnimationState);
     if (
       wizardImage &&
@@ -216,16 +216,16 @@ export class Renderer {
       const drawWidth = currentConfig.frameWidth * currentConfig.scale;
       const drawHeight = currentConfig.frameHeight * currentConfig.scale;
 
-      // 서버로부터 받은 정규화된 좌표를 화면 좌표로 변환
+      // Convert normalized coordinates from the server to screen coordinates
       const worldWidth = this.camera.getWorldWidth();
       const worldX = this.witchX * worldWidth;
       const worldY = this.witchY * viewportHeight;
 
-      // 월드 좌표를 화면 좌표로 변환 (카메라 오프셋 적용)
+      // Convert world coordinates to screen coordinates (apply camera offset)
       const wizardX = worldX + cameraOffset;
-      const wizardY = worldY - drawHeight / 2; // 중심 정렬
+      const wizardY = worldY - drawHeight / 2; // Center alignment
 
-      // 현재 프레임의 소스 좌표 계산
+      // Calculate source coordinates for the current frame
       const srcX = this.wizardCurrentFrame * currentConfig.frameWidth;
       const srcY = 0;
 
@@ -241,47 +241,47 @@ export class Renderer {
         drawHeight
       );
 
-      // HP 바 그리기
+      // Draw HP bar
       this.drawWitchHealthBar(wizardX, wizardY, drawWidth);
     }
   }
 
   /**
-   * Witch HP 바 그리기 (픽셀 아트 스타일)
+   * Draw Witch HP bar (pixel art style)
    */
   private drawWitchHealthBar(x: number, y: number, width: number): void {
-    // 픽셀 아트 스타일 설정
+    // Enable pixel art style
     this.backgroundCtx.imageSmoothingEnabled = false;
 
-    const segmentWidth = 20; // 각 세그먼트 너비
-    const segmentHeight = 18; // 세그먼트 높이
-    const segmentGap = 2; // 세그먼트 간격
-    const numSegments = 10; // 총 세그먼트 수 (10칸)
-    const hpPerSegment = 10; // 각 칸당 HP
+    const segmentWidth = 20; // Width of each segment
+    const segmentHeight = 18; // Height of each segment
+    const segmentGap = 2; // Gap between segments
+    const numSegments = 10; // Total number of segments (10 slots)
+    const hpPerSegment = 10; // HP per segment
     const totalWidth = numSegments * (segmentWidth + segmentGap);
 
     const barX = x + (width - totalWidth) / 2;
-    const barY = y + 225; // Witch 위쪽에 표시
+    const barY = y + 225; // Display above the Witch
 
-    // 채워진 세그먼트 수 계산 (각 칸당 10 HP)
+    // Calculate the number of filled segments (10 HP per slot)
     const filledSegments = Math.floor(this.witchHP / hpPerSegment);
     const partialSegment = (this.witchHP % hpPerSegment) / hpPerSegment;
     const hpRatio = Math.max(0, this.witchHP / this.witchMaxHP);
 
-    // 하트 아이콘 그리기 (픽셀 스타일)
+    // Draw heart icon (pixel style)
     const heartX = barX - 22;
     const heartY = barY + 1;
     this.drawPixelHeart(heartX, heartY, hpRatio);
 
-    // 각 세그먼트 그리기
+    // Draw each segment
     for (let i = 0; i < numSegments; i++) {
       const segX = barX + i * (segmentWidth + segmentGap);
 
       let fillAmount = 0;
       if (i < filledSegments) {
-        fillAmount = 1; // 완전히 채워짐
+        fillAmount = 1; // Fully filled
       } else if (i === filledSegments && partialSegment > 0) {
-        fillAmount = partialSegment; // 부분적으로 채워짐
+        fillAmount = partialSegment; // Partially filled
       }
 
       this.drawHPSegment(
@@ -298,7 +298,7 @@ export class Renderer {
   }
 
   /**
-   * HP 세그먼트 하나 그리기 (픽셀 아트 스타일)
+   * Draw a single HP segment (pixel art style)
    */
   private drawHPSegment(
     x: number,
@@ -308,48 +308,48 @@ export class Renderer {
     fillAmount: number,
     hpRatio: number
   ): void {
-    // 외곽 테두리 (검은색, 2픽셀)
+    // Outer border (black, 2px)
     this.backgroundCtx.fillStyle = "#000000";
     this.backgroundCtx.fillRect(x, y, width, height);
 
-    // 내부 영역
+    // Inner area
     const innerX = x + 2;
     const innerY = y + 2;
     const innerWidth = width - 4;
     const innerHeight = height - 4;
 
     if (fillAmount > 0) {
-      // HP 색상 결정
+      // Determine HP colors
       let mainColor, lightColor, darkColor;
       if (hpRatio > 0.6) {
-        // 초록색 계열
-        mainColor = "#ff5555"; // 밝은 빨강
-        lightColor = "#ffaaaa"; // 매우 밝은 빨강 (상단 하이라이트)
-        darkColor = "#cc3333"; // 어두운 빨강 (하단 음영)
+        // Green tones
+        mainColor = "#ff5555"; // Bright red
+        lightColor = "#ffaaaa"; // Very bright red (top highlight)
+        darkColor = "#cc3333"; // Dark red (bottom shadow)
       } else if (hpRatio > 0.3) {
-        // 노란색 계열
+        // Yellow tones
         mainColor = "#ff5555";
         lightColor = "#ffaaaa";
         darkColor = "#cc3333";
       } else {
-        // 빨간색 계열
+        // Red tones
         mainColor = "#ff5555";
         lightColor = "#ffaaaa";
         darkColor = "#cc3333";
       }
 
-      // 부분적으로 채워진 경우 너비 조정
+      // Adjust width for partially filled segments
       const fillWidth = innerWidth * fillAmount;
 
-      // 메인 색상 (대부분의 영역)
+      // Main color (most of the area)
       this.backgroundCtx.fillStyle = mainColor;
       this.backgroundCtx.fillRect(innerX, innerY, fillWidth, innerHeight);
 
-      // 상단 하이라이트 (밝은 색, 2-3픽셀)
+      // Top highlight (bright color, 2-3px)
       this.backgroundCtx.fillStyle = lightColor;
       this.backgroundCtx.fillRect(innerX, innerY, fillWidth, 3);
 
-      // 하단 음영 (어두운 색, 2픽셀)
+      // Bottom shadow (dark color, 2px)
       this.backgroundCtx.fillStyle = darkColor;
       this.backgroundCtx.fillRect(
         innerX,
@@ -358,7 +358,7 @@ export class Renderer {
         2
       );
 
-      // 빈 부분이 있으면 채우기
+      // Fill empty parts if any
       if (fillAmount < 1) {
         const emptyDark = "#3d3d5c";
         const emptyLight = "#5a5a7a";
@@ -372,26 +372,26 @@ export class Renderer {
         this.backgroundCtx.fillRect(emptyX, innerY, emptyWidth, 2);
       }
     } else {
-      // 완전히 빈 세그먼트 (어두운 회색)
-      const emptyDark = "#3d3d5c"; // 어두운 보라빛 회색
-      const emptyLight = "#5a5a7a"; // 밝은 보라빛 회색 (하이라이트)
+      // Completely empty segment (dark gray)
+      const emptyDark = "#3d3d5c"; // Dark purplish gray
+      const emptyLight = "#5a5a7a"; // Light purplish gray (highlight)
 
       this.backgroundCtx.fillStyle = emptyDark;
       this.backgroundCtx.fillRect(innerX, innerY, innerWidth, innerHeight);
 
-      // 상단 하이라이트
+      // Top highlight
       this.backgroundCtx.fillStyle = emptyLight;
       this.backgroundCtx.fillRect(innerX, innerY, innerWidth, 2);
     }
   }
 
   /**
-   * 픽셀 하트 아이콘 그리기
+   * Draw pixel heart icon
    */
   private drawPixelHeart(x: number, y: number, hpRatio: number): void {
     const pixelSize = 2;
 
-    // 하트 픽셀 패턴 (8x7)
+    // Heart pixel pattern (8x7)
     const heartPattern = [
       [0, 1, 1, 0, 0, 1, 1, 0],
       [1, 1, 1, 1, 1, 1, 1, 1],
@@ -402,22 +402,22 @@ export class Renderer {
       [0, 0, 0, 0, 0, 0, 0, 0],
     ];
 
-    // 하트 색상 결정
+    // Determine heart color
     let heartColor;
     if (hpRatio > 0.6) {
-      heartColor = "#ff3366"; // 밝은 핑크-레드
+      heartColor = "#ff3366"; // Bright pink-red
     } else if (hpRatio > 0.3) {
-      heartColor = "#ff3366"; // 밝은 핑크-레드
+      heartColor = "#ff3366"; // Bright pink-red
     } else if (hpRatio > 0) {
-      heartColor = "#ff3366"; // 밝은 핑크-레드
+      heartColor = "#ff3366"; // Bright pink-red
     } else {
-      heartColor = "#666666"; // 회색 (죽음)
+      heartColor = "#666666"; // Gray (dead)
     }
 
     for (let row = 0; row < heartPattern.length; row++) {
       for (let col = 0; col < heartPattern[row].length; col++) {
         if (heartPattern[row][col] === 1) {
-          // 메인 하트 색상
+          // Main heart color
           this.backgroundCtx.fillStyle = heartColor;
           this.backgroundCtx.fillRect(
             x + col * pixelSize,
@@ -431,14 +431,14 @@ export class Renderer {
   }
 
   /**
-   * 렌더링할 이펙트 배열 설정
+   * Set the array of effects to render
    */
   setEffects(effects: Effect[]): void {
     this.effects = effects;
   }
 
   /**
-   * Witch 상태 getter
+   * Getter for Witch state
    */
   getWitchState(): {
     hp: number;
@@ -453,21 +453,21 @@ export class Renderer {
   }
 
   /**
-   * 시선 커서 설정
+   * Set gaze cursor
    */
   setGazeCursor(cursor: GazeCursor): void {
     this.gazeCursor = cursor;
   }
 
   /**
-   * 게임 캔버스 클리어
+   * Clear the game canvas
    */
   clear(): void {
     this.gameCtx.clearRect(0, 0, this.gameCanvas.width, this.gameCanvas.height);
   }
 
   /**
-   * 렌더링 루프 시작
+   * Start the rendering loop
    */
   start(): void {
     if (this.isRunning) {
@@ -482,7 +482,7 @@ export class Renderer {
   }
 
   /**
-   * 렌더링 루프 중지
+   * Stop the rendering loop
    */
   stop(): void {
     if (!this.isRunning) {
@@ -498,7 +498,7 @@ export class Renderer {
   }
 
   /**
-   * 메인 애니메이션 루프 (60fps)
+   * Main animation loop (60fps)
    */
   private animate = (): void => {
     if (!this.isRunning) return;
@@ -507,39 +507,39 @@ export class Renderer {
     const deltaTime = now - this.lastFrameTime;
     this.lastFrameTime = now;
 
-    // Wizard 애니메이션 업데이트
+    // Update Wizard animation
     this.updateWizardAnimation(deltaTime);
 
-    // 배경 다시 그리기 (카메라 이동 반영)
+    // Redraw background (reflect camera movement)
     this.drawBackground();
 
-    // 게임 캔버스 클리어
+    // Clear the game canvas
     this.clear();
 
-    // 시선 커서 업데이트 및 그리기
+    // Update and draw gaze cursor
     if (this.gazeCursor) {
       this.gazeCursor.update(deltaTime);
       this.gazeCursor.draw(this.gameCtx);
     }
 
-    // 이펙트 업데이트 및 그리기
+    // Update and draw effects
     for (let i = this.effects.length - 1; i >= 0; i--) {
       const effect = this.effects[i];
       effect.update(deltaTime);
       effect.draw(this.gameCtx, this.camera);
 
-      // 완료된 이펙트 제거
+      // Remove completed effects
       if (effect.isComplete()) {
         this.effects.splice(i, 1);
       }
     }
 
-    // 다음 프레임 요청
+    // Request next frame
     this.animationFrameId = requestAnimationFrame(this.animate);
   };
 
   /**
-   * Wizard 애니메이션 프레임 업데이트
+   * Update Wizard animation frames
    */
   private updateWizardAnimation(deltaTime: number): void {
     const currentConfig = WIZARD_SPRITES[this.wizardAnimationState];
@@ -549,28 +549,28 @@ export class Renderer {
       this.wizardElapsedTime -= currentConfig.frameDuration;
       this.wizardCurrentFrame++;
 
-      // hurt 애니메이션이 끝나면 idle로 복귀
+      // Return to idle after hurt animation ends
       if (this.wizardAnimationState === "hurt") {
         if (this.wizardCurrentFrame >= WIZARD_SPRITES.hurt.frameCount) {
           this.wizardAnimationState = "idle";
           this.wizardCurrentFrame = 0;
         }
       }
-      // attack 애니메이션이 끝나면 idle로 복귀
+      // Return to idle after attack animation ends
       else if (this.wizardAnimationState === "attack") {
         if (this.wizardCurrentFrame >= WIZARD_SPRITES.attack.frameCount) {
           this.wizardAnimationState = "idle";
           this.wizardCurrentFrame = 0;
         }
       }
-      // attack2 애니메이션이 끝나면 idle로 복귀
+      // Return to idle after attack2 animation ends
       else if (this.wizardAnimationState === "attack2") {
         if (this.wizardCurrentFrame >= WIZARD_SPRITES.attack2.frameCount) {
           this.wizardAnimationState = "idle";
           this.wizardCurrentFrame = 0;
         }
       } else {
-        // idle 애니메이션 루프
+        // Loop idle animation
         this.wizardCurrentFrame =
           this.wizardCurrentFrame % currentConfig.frameCount;
       }
@@ -578,7 +578,7 @@ export class Renderer {
   }
 
   /**
-   * 캔버스 크기 반환
+   * Get canvas size
    */
   getCanvasSize(): { width: number; height: number } {
     return {
@@ -588,23 +588,14 @@ export class Renderer {
   }
 
   /**
-   * 현재 FPS 계산 (디버그용)
-   */
-  getFPS(): number {
-    const now = performance.now();
-    const deltaTime = now - this.lastFrameTime;
-    return deltaTime > 0 ? 1000 / deltaTime : 0;
-  }
-
-  /**
-   * 게임 컨텍스트 가져오기
+   * Get game context
    */
   getGameContext(): CanvasRenderingContext2D {
     return this.gameCtx;
   }
 
   /**
-   * 정리 (메모리 해제)
+   * Cleanup (free memory)
    */
   dispose(): void {
     this.stop();

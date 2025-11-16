@@ -1,34 +1,34 @@
-// index.html 내에서 AssetLoader 사용 예제
+// Example of using AssetLoader in index.html
 
 import { Effect } from './src/gameplay/Effect.ts';
 import { GazeCursor } from './src/gameplay/GazeCursor.ts';
 import { AssetLoader } from './src/core/AssetLoader.ts';
 
-// AssetLoader 인스턴스 생성
+// Create AssetLoader instance
 const assetLoader = new AssetLoader();
 
-// 게임 초기화 함수
+// Game initialization function
 async function initGame() {
-    // 에셋 로딩 (로딩 화면 표시 가능)
+    // Load assets (can show loading screen)
     await assetLoader.loadAll();
     
-    // 로딩 완료 후 게임 시작
+    // Start game after loading complete
     startGame();
 }
 
 function startGame() {
-    // 배경 이미지 가져오기
+    // Get background image
     const mapImage = assetLoader.getMap('graveyard');
     
-    // WebSocket 연결 등 기존 로직...
+    // Existing logic such as WebSocket connection...
 }
 
-// 이펙트 생성 함수 - AssetLoader 사용
+// Effect creation function - using AssetLoader
 function createEffect(x, y, effectName = 'fireHammer') {
     const vfxData = assetLoader.getVFXWithMetadata(effectName);
     
     if (!vfxData) {
-        console.error(`이펙트 "${effectName}"을 찾을 수 없습니다.`);
+        console.error(`Cannot find effect "${effectName}".`);
         return;
     }
     
@@ -49,7 +49,7 @@ function createEffect(x, y, effectName = 'fireHammer') {
     activeEffects.push(effect);
 }
 
-// 여러 이펙트 쉽게 생성
+// Easily create multiple effects
 function createExplosion(x, y) {
     createEffect(x, y, 'explosion');
 }
@@ -62,5 +62,5 @@ function createMagicCircle(x, y) {
     createEffect(x, y, 'magicCircle');
 }
 
-// 게임 시작
+// Start game
 initGame();

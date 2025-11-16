@@ -27,5 +27,3 @@ dist-ssr
 .env.local
 .env.*.local
 .env
-# .env는 기본 설정이므로 커밋
-# .env.development와 .env.production은 커밋하여 팀과 공유

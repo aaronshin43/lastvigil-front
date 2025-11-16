@@ -1,6 +1,6 @@
 /**
  * VFXTypes.ts
- * VFX 이펙트별 스프라이트 메타데이터 정의
+ * Sprite metadata definition for each VFX effect
  */
 
 export interface VFXMetadata {
@@ -11,7 +11,7 @@ export interface VFXMetadata {
   frameDuration: number; // ms
   loop?: boolean;
   scale?: number;
-  yOffset?: number; // y축 오프셋 (기본 0.7에서 조정, 예: -0.3 = 화면 높이의 40% 지점)
+  yOffset?: number; // Y-axis offset (adjusted from default 0.7, e.g., -0.3 = 40% of screen height)
 }
 
 export interface VFXConfig {
@@ -19,7 +19,7 @@ export interface VFXConfig {
 }
 
 /**
- * 모든 VFX 타입 정의
+ * All VFX type definitions
  */
 export const VFX_TYPES: VFXConfig = {
   fireHammerRed: {
@@ -69,7 +69,7 @@ export const VFX_TYPES: VFXConfig = {
     frameDuration: 60,
     loop: false,
     scale: 3,
-    yOffset: 0.1, // 화면 상단 30% 지점
+    yOffset: 0.1,
   },
   tornado: {
     path: "/assets/vfx/tornado-sheet.png",
@@ -108,19 +108,19 @@ export const VFX_TYPES: VFXConfig = {
     frameDuration: 30,
     loop: false,
     scale: 2.5,
-    yOffset: -0.2, // 화면 70% 지점
+    yOffset: -0.2, 
   },
 };
 
 /**
- * VFX ID로 설정 가져오기
+ * Get configuration by VFX ID
  */
 export function getVFXConfig(vfxId: string): VFXMetadata | null {
   return VFX_TYPES[vfxId] || null;
 }
 
 /**
- * 모든 VFX ID 목록
+ * List of all VFX IDs
  */
 export function getAllVFXIds(): string[] {
   return Object.keys(VFX_TYPES);

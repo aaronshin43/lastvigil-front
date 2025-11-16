@@ -1,7 +1,7 @@
 /**
  * MagicCircleTypes.ts
- * 마법진 스프라이트 메타데이터 정의
- * 이미지에 보이는 4가지 마법진 디자인
+ * Magic circle sprite metadata definition
+ * 4 magic circle designs visible in the image
  */
 
 export interface MagicCircleMetadata {
@@ -12,14 +12,14 @@ export interface MagicCircleMetadata {
   frameDuration: number; // ms per frame
 }
 
-// 스프라이트시트에 4개의 마법진이 가로로 배열되어 있음
+// 4 magic circles are arranged horizontally in the sprite sheet
 export const MAGIC_CIRCLE_TYPES = {
   circle1: {
     path: "/assets/sprites/Magic_Circle/Magic_Circle.png",
-    frameWidth: 838, // 각 마법진의 너비 (추정값, 실제 이미지 크기에 맞게 조정 필요)
-    frameHeight: 838, // 각 마법진의 높이
-    frameCount: 7, // 4개의 다른 디자인
-    frameDuration: 100, // 각 프레임 지속 시간 (ms)
+    frameWidth: 838, // Width of each magic circle (estimated value, adjust to actual image size if needed)
+    frameHeight: 838, // Height of each magic circle
+    frameCount: 7, // 4 different designs
+    frameDuration: 100, // Duration of each frame (ms)
   },
 } as const;
 

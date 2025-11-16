@@ -1,15 +1,15 @@
 /**
  * Effect.ts
- * 2D 스프라이트시트 애니메이션을 처리하는 클래스
- * 폭발, 마법진 등의 VFX를 캔버스에 렌더링
+ * Handles 2D spritesheet animations.
+ * Renders VFX such as explosions and magic circles on the canvas.
  */
 
 import type { VFXMetadata } from "./VFXTypes";
 import type { Camera } from "../core/Camera";
 
 export class Effect {
-  private worldX: number; // 월드 좌표 x
-  private y: number; // 스크린 좌표 y (yOffset 반영된 고정 위치)
+  private worldX: number; // World coordinate x
+  private y: number; // Screen coordinate y (fixed position with yOffset applied)
   private image: HTMLImageElement;
   private frameWidth: number;
   private frameHeight: number;
@@ -23,7 +23,7 @@ export class Effect {
   private isFinished: boolean = false;
 
   constructor(
-    worldX: number, // 월드 좌표로 받음
+    worldX: number, // Received as world coordinate
     y: number,
     image: HTMLImageElement,
     metadata: VFXMetadata
@@ -40,43 +40,43 @@ export class Effect {
   }
 
   /**
-   * 이펙트 업데이트 (deltaTime 기반)
-   * @param deltaTime 이전 프레임으로부터 경과된 시간 (ms)
+   * Update the effect (based on deltaTime)
+   * @param deltaTime Time elapsed since the last frame (ms)
    */
   update(deltaTime: number): void {
     if (this.isFinished) return;
 
     this.elapsedTime += deltaTime;
 
-    // 프레임 전환
+    // Frame transition
     if (this.elapsedTime >= this.frameDuration) {
       this.elapsedTime -= this.frameDuration;
       this.currentFrame++;
 
-      // 애니메이션 종료 체크
+      // Check if the animation has ended
       if (this.currentFrame >= this.frameCount) {
         if (this.loop) {
-          this.currentFrame = 0; // 루프
+          this.currentFrame = 0; // Loop
         } else {
           this.currentFrame = this.frameCount - 1;
-          this.isFinished = true; // 종료
+          this.isFinished = true; // End
         }
       }
     }
   }
 
   /**
-   * 이펙트를 캔버스에 그리기
-   * @param ctx 2D 렌더링 컨텍스트
-   * @param camera 카메라 객체 (월드 → 스크린 좌표 변환)
+   * Draw the effect on the canvas
+   * @param ctx 2D rendering context
+   * @param camera Camera object (converts world → screen coordinates)
    */
   draw(ctx: CanvasRenderingContext2D, camera: Camera): void {
-    if (!this.image.complete) return; // 이미지 로드 안 됐으면 스킵
+    if (!this.image.complete) return; // Skip if the image is not loaded
 
-    // 월드 좌표를 스크린 좌표로 변환
+    // Convert world coordinates to screen coordinates
     const screenPos = camera.worldToScreen(this.worldX, this.y);
 
-    // 화면 밖이면 그리지 않음 (최적화)
+    // Skip drawing if outside the screen (optimization)
     const drawWidth = this.frameWidth * this.scale;
     const drawHeight = this.frameHeight * this.scale;
     const margin = 200;
@@ -87,12 +87,12 @@ export class Effect {
       return;
     }
 
-    // 스프라이트시트에서 현재 프레임의 위치 계산
-    // 가정: 스프라이트시트는 가로로 프레임이 나열됨
+    // Calculate the position of the current frame in the spritesheet
+    // Assumption: Frames are arranged horizontally in the spritesheet
     const sx = this.currentFrame * this.frameWidth;
     const sy = 0;
 
-    // 그릴 위치 계산 (중심 기준, 스크린 좌표 사용)
+    // Calculate the drawing position (centered, using screen coordinates)
     const drawX = screenPos.x - drawWidth / 2;
     const drawY = screenPos.y - drawHeight / 2;
 
@@ -101,23 +101,23 @@ export class Effect {
       sx,
       sy,
       this.frameWidth,
-      this.frameHeight, // 소스 영역
+      this.frameHeight, // Source area
       drawX,
       drawY,
       drawWidth,
-      drawHeight // 대상 영역
+      drawHeight // Target area
     );
   }
 
   /**
-   * 이펙트가 종료되었는지 확인
+   * Check if the effect has finished
    */
   isComplete(): boolean {
     return this.isFinished;
   }
 
   /**
-   * 이펙트 위치 설정 (월드 좌표)
+   * Set the position of the effect (world coordinates)
    */
   setPosition(worldX: number, y: number): void {
     this.worldX = worldX;
@@ -125,14 +125,14 @@ export class Effect {
   }
 
   /**
-   * 현재 위치 반환 (월드 좌표 x, 스크린 좌표 y)
+   * Get the current position (world x-coordinate, screen y-coordinate)
    */
   getPosition(): { x: number; y: number } {
     return { x: this.worldX, y: this.y };
   }
 
   /**
-   * 이펙트 리셋 (재사용 시)
+   * Reset the effect (for reuse)
    */
   reset(worldX?: number, y?: number): void {
     this.currentFrame = 0;

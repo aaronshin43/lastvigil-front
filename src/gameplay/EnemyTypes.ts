@@ -1,6 +1,6 @@
 /**
  * EnemyTypes.ts
- * 각 몬스터별 스프라이트 메타데이터 및 게임 스탯 정의
+ * Sprite metadata and game stats for each monster
  */
 
 export interface SpriteAnimationConfig {
@@ -24,18 +24,18 @@ export interface EnemyTypeConfig {
     speed: number; // pixels per second
     damage: number;
     goldReward: number;
-    scale: number; // 렌더링 크기 배율
+    scale: number; // Rendering size scale
   };
 }
 
 /**
- * 모든 적 타입 정의
+ * All enemy type definitions
  */
 export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
-  // ========== Tier 1: 기본 몬스터 ==========
+  // ========== Tier 1: Basic Monsters ==========
   slime: {
     id: "slime",
-    name: "슬라임",
+    name: "Slime",
     sprites: {
       walk: {
         path: "/assets/sprites/Slime/Slime_walk.png",
@@ -70,7 +70,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
 
   skeleton: {
     id: "skeleton",
-    name: "해골",
+    name: "Skeleton",
     sprites: {
       walk: {
         path: "/assets/sprites/Skeleton/Skeleton_walk.png",
@@ -105,7 +105,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
 
   orc: {
     id: "orc",
-    name: "오크",
+    name: "Orc",
     sprites: {
       walk: {
         path: "/assets/sprites/Orc/Orc_walk.png",
@@ -138,10 +138,10 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
     },
   },
 
-  // ========== Tier 2: 중급 몬스터 ==========
+  // ========== Tier 2: Intermediate Monsters ==========
   skeletonArcher: {
     id: "skeletonArcher",
-    name: "해골 궁수",
+    name: "Skeleton Archer",
     sprites: {
       walk: {
         path: "/assets/sprites/Skeleton_Archor/Skeleton_Archer_walk.png",
@@ -176,7 +176,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
 
   armoredSkeleton: {
     id: "armoredSkeleton",
-    name: "중장 해골",
+    name: "Armored Skeleton",
     sprites: {
       walk: {
         path: "/assets/sprites/Armored_Skeleton/Armored_Skeleton_walk.png",
@@ -211,7 +211,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
 
   greatswordSkeleton: {
     id: "greatswordSkeleton",
-    name: "대검 해골",
+    name: "Greatsword Skeleton",
     sprites: {
       walk: {
         path: "/assets/sprites/Greatsword_Skeleton/Greatsword_Skeleton_walk.png",
@@ -244,10 +244,10 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
     },
   },
 
-  // ========== Tier 3: 고급 몬스터 ==========
+  // ========== Tier 3: Advanced Monsters ==========
   armoredOrc: {
     id: "armoredOrc",
-    name: "중장 오크",
+    name: "Armored Orc",
     sprites: {
       walk: {
         path: "/assets/sprites/Armored_Orc/Armored_Orc_walk.png",
@@ -282,7 +282,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
 
   elitOrc: {
     id: "elitOrc",
-    name: "엘리트 오크",
+    name: "Elite Orc",
     sprites: {
       walk: {
         path: "/assets/sprites/Elit_Orc/Elit_Orc_walk.png",
@@ -317,7 +317,7 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
 
   orcRider: {
     id: "orcRider",
-    name: "오크 기수",
+    name: "Orc Rider",
     sprites: {
       walk: {
         path: "/assets/sprites/Orc_rider/Orc_rider_walk.png",
@@ -350,10 +350,10 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
     },
   },
 
-  // ========== Tier 4: 보스 ==========
+  // ========== Tier 4: Boss ==========
   // dragon: {
   //   id: "dragon",
-  //   name: "드래곤",
+  //   name: "Dragon",
   //   sprites: {
   //     walk: {
   //       path: "/assets/sprites/Dragon/Dragon_walk.png",
@@ -388,14 +388,14 @@ export const ENEMY_TYPES: { [key: string]: EnemyTypeConfig } = {
 };
 
 /**
- * 적 타입 ID로 설정 가져오기
+ * Get configuration by enemy type ID
  */
 export function getEnemyConfig(typeId: string): EnemyTypeConfig | null {
   return ENEMY_TYPES[typeId] || null;
 }
 
 /**
- * 모든 적 타입 ID 목록
+ * List of all enemy type IDs
  */
 export function getAllEnemyTypeIds(): string[] {
   return Object.keys(ENEMY_TYPES);

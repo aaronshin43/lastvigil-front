@@ -1,7 +1,7 @@
 /**
  * AssetLoader.ts
- * 모든 .png 이미지 에셋을 Image 객체로 미리 로드
- * 이미지 로딩 및 캐싱만 담당 (메타데이터는 각 모듈에서 관리)
+ * Pre-loads all .png image assets as Image objects
+ * Handles only image loading and caching (metadata is managed by each module)
  */
 
 import { ENEMY_TYPES } from "../gameplay/EnemyTypes";
@@ -18,7 +18,7 @@ export interface AssetManifest {
   };
 }
 
-// 에셋 매니페스트 - 맵 경로 정의
+// Asset manifest - defines map paths
 const ASSET_MANIFEST: AssetManifest = {
   maps: {
     graveyard: "/assets/maps/background_ingame_final_final.png",
@@ -34,17 +34,17 @@ export class AssetLoader {
   private loadingPromises: Promise<void>[] = [];
 
   /**
-   * 모든 에셋 로드
+   * Load all assets
    */
   async loadAll(): Promise<void> {
-    console.log("에셋 로딩 시작...");
+    console.log("Starting asset loading...");
 
-    // 맵 이미지 로드
+    // Load map images
     for (const [key, path] of Object.entries(ASSET_MANIFEST.maps)) {
       this.loadingPromises.push(this.loadImage(`map_${key}`, path));
     }
 
-    // Wizard 스프라이트 로드 (플레이어)
+    // Load Wizard sprites (player)
     this.loadingPromises.push(
       this.loadImage("wizard_idle", "/assets/sprites/Wizard/Wizard_idle.png")
     );
@@ -64,26 +64,26 @@ export class AssetLoader {
       )
     );
 
-    // Wizard 스프라이트 로드 (Castle용 - 기존)
+    // Load Wizard sprites (for Castle - legacy)
     this.loadingPromises.push(this.loadImage("wizard", WIZARD_SPRITE.path));
 
-    // Magic Circle 스프라이트 로드 (조준원용)
+    // Load Magic Circle sprites (for aiming circle)
     this.loadingPromises.push(
       this.loadImage("magic_circle", MAGIC_CIRCLE_TYPES.circle1.path)
     );
 
-    // VFX 이미지 로드
+    // Load VFX images
     await this.loadVFXSprites();
 
-    // 적 스프라이트 로드
+    // Load enemy sprites
     await this.loadEnemySprites();
 
     await Promise.all(this.loadingPromises);
-    console.log(`에셋 로딩 완료: ${this.loadedImages.size}개 이미지`);
+    console.log(`Asset loading completed: ${this.loadedImages.size} images`);
   }
 
   /**
-   * VFXTypes.ts에 정의된 모든 VFX 스프라이트 로드
+   * Load all VFX sprites defined in VFXTypes.ts
    */
   private async loadVFXSprites(): Promise<void> {
     const allVFXTypes = Object.entries(VFX_TYPES);
@@ -94,13 +94,13 @@ export class AssetLoader {
   }
 
   /**
-   * EnemyTypes.ts에 정의된 모든 적 스프라이트 로드
+   * Load all enemy sprites defined in EnemyTypes.ts
    */
   private async loadEnemySprites(): Promise<void> {
     const allEnemyTypes = Object.values(ENEMY_TYPES);
 
     for (const enemyType of allEnemyTypes) {
-      // walk 스프라이트
+      // walk sprites
       this.loadingPromises.push(
         this.loadImage(
           `enemy_${enemyType.id}_walk`,
@@ -108,7 +108,7 @@ export class AssetLoader {
         )
       );
 
-      // hurt 스프라이트
+      // hurt sprites
       this.loadingPromises.push(
         this.loadImage(
           `enemy_${enemyType.id}_hurt`,
@@ -116,7 +116,7 @@ export class AssetLoader {
         )
       );
 
-      // death 스프라이트
+      // death sprites
       this.loadingPromises.push(
         this.loadImage(
           `enemy_${enemyType.id}_death`,
@@ -127,18 +127,18 @@ export class AssetLoader {
   }
 
   /**
-   * 개별 이미지 로드
+   * Load individual image
    */
   private loadImage(key: string, path: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
         this.loadedImages.set(key, img);
-        // console.log(`✓ 로드됨: ${path}`);
+        // console.log(`✓ Loaded: ${path}`);
         resolve();
       };
       img.onerror = () => {
-        console.error(`✗ 로드 실패: ${path}`);
+        console.error(`✗ Failed to load: ${path}`);
         reject(new Error(`Failed to load image: ${path}`));
       };
       img.src = path;
@@ -146,28 +146,28 @@ export class AssetLoader {
   }
 
   /**
-   * 맵 이미지 가져오기
+   * Get map image
    */
   getMap(name: string): HTMLImageElement | null {
     return this.loadedImages.get(`map_${name}`) || null;
   }
 
   /**
-   * VFX 이미지 가져오기
+   * Get VFX image
    */
   getVFX(name: string): HTMLImageElement | null {
     return this.loadedImages.get(`vfx_${name}`) || null;
   }
 
   /**
-   * VFX 메타데이터 가져오기
+   * Get VFX metadata
    */
   getVFXMetadata(name: string): VFXMetadata | null {
     return VFX_TYPES[name] || null;
   }
 
   /**
-   * Wizard 이미지 가져오기
+   * Get Wizard image
    */
   getWizard(
     state?: "idle" | "hurt" | "attack" | "attack2"
@@ -175,33 +175,33 @@ export class AssetLoader {
     if (state) {
       return this.loadedImages.get(`wizard_${state}`) || null;
     }
-    // state가 없으면 기존 wizard (Castle용)
+    // If no state, return legacy wizard (for Castle)
     return this.loadedImages.get("wizard") || null;
   }
 
   /**
-   * Wizard 메타데이터 가져오기
+   * Get Wizard metadata
    */
   getWizardMetadata(): WizardMetadata {
     return WIZARD_SPRITE;
   }
 
   /**
-   * Magic Circle 이미지 가져오기
+   * Get Magic Circle image
    */
   getMagicCircle(): HTMLImageElement | null {
     return this.loadedImages.get("magic_circle") || null;
   }
 
   /**
-   * Magic Circle 메타데이터 가져오기
+   * Get Magic Circle metadata
    */
   getMagicCircleMetadata(): MagicCircleMetadata {
     return MAGIC_CIRCLE_TYPES.circle1;
   }
 
   /**
-   * VFX 이미지와 메타데이터 함께 가져오기
+   * Get VFX image and metadata together
    */
   getVFXWithMetadata(
     name: string
@@ -210,7 +210,7 @@ export class AssetLoader {
     const metadata = this.getVFXMetadata(name);
 
     if (!image || !metadata) {
-      console.warn(`VFX "${name}"을 찾을 수 없습니다.`);
+      console.warn(`VFX "${name}" not found.`);
       return null;
     }
 
@@ -218,7 +218,7 @@ export class AssetLoader {
   }
 
   /**
-   * 로딩 진행률 (0~1)
+   * Get loading progress (0-1)
    */
   getProgress(): number {
     const total =
@@ -229,22 +229,22 @@ export class AssetLoader {
   }
 
   /**
-   * 모든 VFX 이름 목록
+   * Get list of all VFX names
    */
   getVFXList(): string[] {
     return Object.keys(VFX_TYPES);
   }
 
   /**
-   * 경로로 이미지 가져오기 (범용)
+   * Get image by path (universal)
    */
   getImageByPath(path: string): HTMLImageElement | null {
-    // Magic Circle 경로 확인
+    // Check Magic Circle path
     if (path === MAGIC_CIRCLE_TYPES.circle1.path) {
       return this.loadedImages.get("magic_circle") || null;
     }
 
-    // Wizard 경로 확인
+    // Check Wizard paths
     if (path === "/assets/sprites/Wizard/Wizard_idle.png") {
       return this.loadedImages.get("wizard_idle") || null;
     }
@@ -258,21 +258,21 @@ export class AssetLoader {
       return this.loadedImages.get("wizard_attack2") || null;
     }
 
-    // 맵 경로 확인
+    // Check map paths
     for (const [name, mapPath] of Object.entries(ASSET_MANIFEST.maps)) {
       if (mapPath === path) {
         return this.loadedImages.get(`map_${name}`) || null;
       }
     }
 
-    // VFX 경로 확인
+    // Check VFX paths
     for (const [name, vfxConfig] of Object.entries(VFX_TYPES)) {
       if (vfxConfig.path === path) {
         return this.loadedImages.get(`vfx_${name}`) || null;
       }
     }
 
-    // 적 스프라이트 경로 확인
+    // Check enemy sprite paths
     for (const [enemyId, enemyType] of Object.entries(ENEMY_TYPES)) {
       if (enemyType.sprites.walk.path === path) {
         return this.loadedImages.get(`enemy_${enemyId}_walk`) || null;
@@ -285,7 +285,7 @@ export class AssetLoader {
       }
     }
 
-    console.warn(`이미지를 찾을 수 없습니다: ${path}`);
+    console.warn(`Image not found: ${path}`);
     return null;
   }
 }

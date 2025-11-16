@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Last Vigil - Vultr AI Game</title>
-    <!-- Google Fonts - 고전적인 세리프 폰트 -->
+    <!-- Google Fonts - Classic serif fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Text:wght@400;700&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
@@ -47,7 +47,7 @@
       video {
         display: none;
       }
-      /* 게임 UI */
+      /* Game UI */
       #game-ui {
         position: fixed;
         top: 9px;
@@ -66,22 +66,22 @@
     </style>
   </head>
   <body>
-    <!-- 랜딩 화면 캠버스 -->
+    <!-- Landing screen canvas -->
     <canvas id="landing-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000;"></canvas>
     
-    <!-- 카운트다운 화면 캠버스 -->
+    <!-- Countdown screen canvas -->
     <canvas id="countdown-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 999; display: none;"></canvas>
     
-    <!-- 게임 오버 화면 캠버스 -->
+    <!-- Game over screen canvas -->
     <canvas id="gameover-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 998; display: none;"></canvas>
     
-    <!-- 게임 오버 화면 캠버스 -->
+    <!-- Game over screen canvas -->
     <canvas id="gameover-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 998; display: none;"></canvas>
     
     <canvas id="background-canvas"></canvas>
     <canvas id="circle-canvas"></canvas>
 
-    <!-- 중앙 상단 Status2 이미지 -->
+    <!-- Top center Status2 image -->
     <img
       id="status2-display"
       src="assets/Status/status2.png"
@@ -98,7 +98,7 @@
       "
     />
 
-    <!-- Guide 버튼 (Status2 우상단) -->
+    <!-- Guide button (top right of Status2) -->
     <img
       id="guide-button"
       src="assets/Status/guide.png"
@@ -117,7 +117,7 @@
       onmouseout="this.style.transform='scale(1)'"
     />
 
-    <!-- Skip 버튼 (Guide 버튼 아래) -->
+    <!-- Skip button (below Guide button) -->
     <img
       id="skip-button"
       src="assets/Status/skip.png"
@@ -136,7 +136,7 @@
       onmouseout="this.style.transform='scale(1)'"
     />
 
-    <!-- Score 이미지 -->
+    <!-- Score image -->
     <img
       id="score-image"
       src="assets/Status/score.png"
@@ -151,12 +151,12 @@
       "
     />
 
-    <!-- 게임 UI -->
+    <!-- Game UI -->
     <div id="game-ui" style="font-family: 'IM Fell English SC', 'Cinzel', 'Crimson Text', serif;">
       <div id="score">0</div>
     </div>
 
-    <!-- 제스처 시퀀스 UI -->
+    <!-- Gesture sequence UI -->
     <div
       id="gesture-sequence-ui"
       style="
@@ -182,7 +182,7 @@
       ></div>
     </div>
 
-    <!-- ASL 제스처 가이드 UI (guide 버튼 클릭 시 표시) -->
+    <!-- ASL gesture guide UI (shown when guide button is clicked) -->
     <div
       id="asl-guide-container"
       style="
@@ -210,7 +210,7 @@
           justify-content: center;
         "
       >
-        <!-- ASL 이미지들이 동적으로 추가됩니다 -->
+        <!-- ASL images are added dynamically -->
       </div>
     </div>
 

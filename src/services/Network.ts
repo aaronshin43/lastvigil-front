@@ -1,6 +1,6 @@
 /**
  * Network.ts
- * WebSocket 연결, Vultr AI 데이터 수신 관리
+ * WebSocket connection, Vultr AI data reception management
  */
 
 export interface NetworkConfig {
@@ -20,7 +20,7 @@ export class Network {
   private reconnectTimer: number | null = null;
   private isIntentionallyClosed: boolean = false;
 
-  // 이벤트 핸들러
+  // Event handlers
   private onMessageHandler: MessageHandler | null = null;
   private onOpenHandler: ConnectionHandler | null = null;
   private onCloseHandler: ConnectionHandler | null = null;
@@ -35,34 +35,34 @@ export class Network {
   }
 
   /**
-   * WebSocket 연결
+   * Connect WebSocket
    */
   connect(): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      console.warn('⚠️ WebSocket이 이미 연결되어 있습니다.');
+      console.warn('⚠️ WebSocket is already connected.');
       return;
     }
 
-    console.log(`🔌 WebSocket 연결 시도: ${this.config.serverUrl}`);
+    console.log(`🔌 Attempting WebSocket connection: ${this.config.serverUrl}`);
     this.isIntentionallyClosed = false;
 
     try {
       this.ws = new WebSocket(this.config.serverUrl);
       this.setupEventHandlers();
     } catch (error) {
-      console.error('❌ WebSocket 생성 실패:', error);
+      console.error('❌ WebSocket creation failed:', error);
       this.attemptReconnect();
     }
   }
 
   /**
-   * WebSocket 이벤트 핸들러 설정
+   * Set up WebSocket event handlers
    */
   private setupEventHandlers(): void {
     if (!this.ws) return;
 
     this.ws.onopen = () => {
-      console.log('✅ WebSocket 연결 성공!');
+      console.log('✅ WebSocket connection successful!');
       this.reconnectAttempts = 0;
       if (this.onOpenHandler) {
         this.onOpenHandler();
@@ -76,24 +76,24 @@ export class Network {
           this.onMessageHandler(data);
         }
       } catch (error) {
-        console.error('❌ 메시지 파싱 실패:', error);
+        console.error('❌ Message parsing failed:', error);
       }
     };
 
     this.ws.onerror = (error) => {
-      console.error('🔥 WebSocket 오류:', error);
+      console.error('🔥 WebSocket error:', error);
       if (this.onErrorHandler) {
         this.onErrorHandler(error);
       }
     };
 
     this.ws.onclose = () => {
-      console.log('🔌 WebSocket 연결 종료');
+      // console.log('🔌 WebSocket connection closed');
       if (this.onCloseHandler) {
         this.onCloseHandler();
       }
 
-      // 의도적으로 종료하지 않았다면 재연결 시도
+      // If not intentionally closed, attempt reconnection
       if (!this.isIntentionallyClosed) {
         this.attemptReconnect();
       }
@@ -101,18 +101,18 @@ export class Network {
   }
 
   /**
-   * 재연결 시도
+   * Attempt reconnection
    */
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.config.maxReconnectAttempts!) {
-      console.error('❌ 최대 재연결 시도 횟수 초과');
+      console.error('❌ Maximum reconnection attempts exceeded');
       return;
     }
 
     this.reconnectAttempts++;
-    console.log(
-      `🔄 재연결 시도 ${this.reconnectAttempts}/${this.config.maxReconnectAttempts} (${this.config.reconnectInterval}ms 후)`
-    );
+    // console.log(
+    //   `🔄 Reconnection attempt ${this.reconnectAttempts}/${this.config.maxReconnectAttempts} (after ${this.config.reconnectInterval}ms)`
+    // );
 
     this.reconnectTimer = window.setTimeout(() => {
       this.connect();
@@ -120,7 +120,7 @@ export class Network {
   }
 
   /**
-   * WebSocket 연결 종료
+   * Disconnect WebSocket
    */
   disconnect(): void {
     this.isIntentionallyClosed = true;
@@ -137,62 +137,62 @@ export class Network {
       this.ws = null;
     }
 
-    console.log('🔌 WebSocket 연결 종료됨');
+    // console.log('🔌 WebSocket connection terminated');
   }
 
   /**
-   * 데이터 전송
+   * Send data
    */
   send(data: string | ArrayBuffer | Blob): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.error('❌ WebSocket이 연결되지 않았습니다.');
+      console.error('❌ WebSocket is not connected.');
       return;
     }
 
     try {
       this.ws.send(data);
     } catch (error) {
-      console.error('❌ 데이터 전송 실패:', error);
+      console.error('❌ Data transmission failed:', error);
     }
   }
 
   /**
-   * 연결 상태 확인
+   * Check connection status
    */
   isConnected(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
   }
 
   /**
-   * 연결 상태 반환
+   * Return connection state
    */
   getReadyState(): number {
     return this.ws ? this.ws.readyState : WebSocket.CLOSED;
   }
 
   /**
-   * 메시지 수신 핸들러 등록
+   * Register message reception handler
    */
   onMessage(handler: MessageHandler): void {
     this.onMessageHandler = handler;
   }
 
   /**
-   * 연결 성공 핸들러 등록
+   * Register connection success handler
    */
   onOpen(handler: ConnectionHandler): void {
     this.onOpenHandler = handler;
   }
 
   /**
-   * 연결 종료 핸들러 등록
+   * Register connection close handler
    */
   onClose(handler: ConnectionHandler): void {
     this.onCloseHandler = handler;
   }
 
   /**
-   * 오류 핸들러 등록
+   * Register error handler
    */
   onError(handler: ErrorHandler): void {
     this.onErrorHandler = handler;

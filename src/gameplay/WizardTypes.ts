@@ -1,6 +1,6 @@
 /**
  * WizardTypes.ts
- * Wizard 스프라이트 메타데이터 정의
+ * Wizard sprite metadata definition
  */
 
 export interface WizardMetadata {
@@ -13,7 +13,7 @@ export interface WizardMetadata {
 }
 
 /**
- * Wizard 애니메이션 설정
+ * Wizard animation settings
  */
 export const WIZARD_SPRITES = {
   idle: {
@@ -54,6 +54,6 @@ export const WIZARD_SPRITES = {
 };
 
 /**
- * Wizard Idle 애니메이션 설정 (하위 호환성)
+ * Wizard Idle animation settings (for backward compatibility)
  */
 export const WIZARD_SPRITE: WizardMetadata = WIZARD_SPRITES.idle;

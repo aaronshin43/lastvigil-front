@@ -1,6 +1,6 @@
 /**
  * LandingScreen.ts
- * 게임 시작 전 랜딩 화면 관리
+ * Manages the landing screen before the game starts
  */
 
 export interface LandingScreenOptions {
@@ -13,22 +13,22 @@ export class LandingScreen {
   private ctx: CanvasRenderingContext2D;
   private onStart: () => void;
 
-  // 이미지들
+  // Images
   private landingBg: HTMLImageElement | null = null;
   private flourishOrnament: HTMLImageElement | null = null;
   private landingTitle: HTMLImageElement | null = null;
   private startButton: HTMLImageElement | null = null;
 
-  // 버튼 영역
+  // Button area
   private buttonRect = { x: 0, y: 0, width: 0, height: 0 };
   private isHovering = false;
 
-  // 애니메이션 상태
+  // Animation state
   private animationStartTime = 0;
   private isAnimating = false;
   private animationFrameId: number | null = null;
 
-  // 버튼 플로팅 애니메이션
+  // Button floating animation
   private floatingStartTime = 0;
   private isFloating = false;
 
@@ -49,17 +49,17 @@ export class LandingScreen {
     }
     this.ctx = ctx;
 
-    // 캔버스 크기 설정
+    // Set canvas size
     this.resize();
     window.addEventListener("resize", () => this.resize());
 
-    // 마우스 이벤트
+    // Mouse events
     this.canvas.addEventListener("mousemove", (e) => this.handleMouseMove(e));
     this.canvas.addEventListener("click", (e) => this.handleClick(e));
   }
 
   /**
-   * 이미지 설정
+   * Set images
    */
   setImages(images: {
     landing: HTMLImageElement;
@@ -74,7 +74,7 @@ export class LandingScreen {
   }
 
   /**
-   * 화면 크기 조정
+   * Adjust screen size
    */
   private resize() {
     this.canvas.width = window.innerWidth;
@@ -85,7 +85,7 @@ export class LandingScreen {
   }
 
   /**
-   * 애니메이션 시작
+   * Start animation
    */
   private startAnimation() {
     this.isAnimating = true;
@@ -94,31 +94,31 @@ export class LandingScreen {
   }
 
   /**
-   * 애니메이션 루프
+   * Animation loop
    */
   private animate = () => {
     const elapsed = performance.now() - this.animationStartTime;
 
-    // 애니메이션 완료 (총 2.5초)
+    // Animation complete (total 2.5 seconds)
     if (elapsed >= 2500) {
       this.isAnimating = false;
-      // 플로팅 애니메이션 시작
+      // Start floating animation
       this.startFloating();
       return;
     }
 
-    // 단계별 알파값 계산
-    const bgAlpha = this.easeInOut(Math.min(elapsed / 1500, 1)); // 0-1.2초: 배경
+    // Calculate alpha values for each stage
+    const bgAlpha = this.easeInOut(Math.min(elapsed / 1500, 1)); // 0-1.2s: Background
     const ornamentAlpha = this.easeInOut(
       Math.max(0, Math.min((elapsed - 1000) / 800, 1))
-    ); // 1.0-1.7초: 장식+타이틀
+    ); // 1.0-1.7s: Ornament + Title
     const buttonAlpha = this.easeInOut(
       Math.max(0, Math.min((elapsed - 1500) / 600, 1))
-    ); // 1.5-2.1초: 버튼
+    ); // 1.5-2.1s: Button
 
-    // Y 오프셋 계산 (아래에서 위로 올라오는 효과)
-    const ornamentYOffset = 40 * (1 - ornamentAlpha); // 50px 아래에서 시작
-    const buttonYOffset = 30 * (1 - buttonAlpha); // 50px 아래에서 시작
+    // Calculate Y offsets (rising effect)
+    const ornamentYOffset = 40 * (1 - ornamentAlpha); // Starts 50px below
+    const buttonYOffset = 30 * (1 - buttonAlpha); // Starts 50px below
 
     this.draw(
       bgAlpha,
@@ -131,7 +131,7 @@ export class LandingScreen {
   };
 
   /**
-   * 플로팅 애니메이션 시작
+   * Start floating animation
    */
   private startFloating() {
     this.isFloating = true;
@@ -140,13 +140,13 @@ export class LandingScreen {
   }
 
   /**
-   * 플로팅 애니메이션 루프
+   * Floating animation loop
    */
   private floatingAnimate = () => {
     if (!this.isFloating) return;
 
     const elapsed = performance.now() - this.floatingStartTime;
-    // 사인파를 이용한 부드러운 상하 움직임 (2초 주기, ±15px)
+    // Smooth up-and-down movement using sine wave (2s cycle, ±15px)
     const floatOffset = Math.sin(elapsed / 500) * 10;
 
     this.draw(1, 1, 1, 0, floatOffset);
@@ -154,14 +154,14 @@ export class LandingScreen {
   };
 
   /**
-   * Ease-in-out 함수
+   * Ease-in-out function
    */
   private easeInOut(t: number): number {
     return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
   }
 
   /**
-   * 랜딩 화면 그리기
+   * Draw the landing screen
    */
   draw(
     bgAlpha = 1,
@@ -172,34 +172,34 @@ export class LandingScreen {
   ) {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // 검은 배경
+    // Black background
     this.ctx.fillStyle = "#000000";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     const centerX = this.canvas.width / 2;
     const centerY = this.canvas.height / 2;
 
-    // 1. 배경 이미지 (landing.png) - 페이드 인 (비율 유지하며 확대)
+    // 1. Background image (landing.png) - Fade-in (scaled to fit)
     if (this.landingBg && this.landingBg.complete) {
       this.ctx.save();
       this.ctx.globalAlpha = bgAlpha;
 
-      // 이미지 비율 계산
+      // Calculate image ratio
       const imgRatio =
         this.landingBg.naturalWidth / this.landingBg.naturalHeight;
       const canvasRatio = this.canvas.width / this.canvas.height;
 
       let drawWidth, drawHeight, offsetX, offsetY;
 
-      // cover 방식: 화면을 꽉 채우되 비율 유지
+      // Cover mode: Fill the screen while maintaining aspect ratio
       if (imgRatio > canvasRatio) {
-        // 이미지가 더 넓음 -> 높이를 기준으로 맞춤
+        // Image is wider -> Fit by height
         drawHeight = this.canvas.height;
         drawWidth = drawHeight * imgRatio;
         offsetX = (this.canvas.width - drawWidth) / 2;
         offsetY = 0;
       } else {
-        // 이미지가 더 좁음 -> 너비를 기준으로 맞춤
+        // Image is narrower -> Fit by width
         drawWidth = this.canvas.width;
         drawHeight = drawWidth / imgRatio;
         offsetX = 0;
@@ -216,7 +216,7 @@ export class LandingScreen {
       this.ctx.restore();
     }
 
-    // 2. 장식 (flourishOrnamentNoBack.png) - 페이드 인 + 아래에서 위로
+    // 2. Ornament (flourishOrnamentNoBack.png) - Fade-in + Rising effect
     if (this.flourishOrnament && this.flourishOrnament.complete) {
       this.ctx.save();
       this.ctx.globalAlpha = ornamentAlpha;
@@ -238,7 +238,7 @@ export class LandingScreen {
       this.ctx.restore();
     }
 
-    // 3. 타이틀 (landingTitle.png) - 장식과 함께 페이드 인 + 아래에서 위로
+    // 3. Title (landingTitle.png) - Fade-in + Rising effect with ornament
     if (this.landingTitle && this.landingTitle.complete) {
       this.ctx.save();
       this.ctx.globalAlpha = ornamentAlpha;
@@ -259,7 +259,7 @@ export class LandingScreen {
       this.ctx.restore();
     }
 
-    // 4. 시작 버튼 (StartButton.png) - 페이드 인 + 아래에서 위로
+    // 4. Start button (StartButton.png) - Fade-in + Rising effect
     if (this.startButton && this.startButton.complete) {
       this.ctx.save();
       this.ctx.globalAlpha = buttonAlpha * (this.isHovering ? 0.8 : 1);
@@ -270,7 +270,7 @@ export class LandingScreen {
       const buttonX = centerX - buttonWidth / 2 + 10;
       const buttonY = centerY + 200 + buttonYOffset;
 
-      // 버튼 영역 저장 (클릭 감지용)
+      // Save button area (for click detection)
       this.buttonRect = {
         x: buttonX,
         y: buttonY,
@@ -278,7 +278,7 @@ export class LandingScreen {
         height: buttonHeight,
       };
 
-      // 호버 효과
+      // Hover effect
       if (this.isHovering) {
         this.ctx.drawImage(
           this.startButton,
@@ -301,24 +301,24 @@ export class LandingScreen {
   }
 
   /**
-   * 마우스 이동 처리
+   * Handle mouse movement
    */
   private handleMouseMove(e: MouseEvent) {
-    // 애니메이션 중에는 호버 효과 비활성화
+    // Disable hover effect during animation
     if (this.isAnimating) return;
 
     const rect = this.canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // 버튼 영역 체크
+    // Check button area
     const wasHovering = this.isHovering;
     this.isHovering = this.isPointInButton(mouseX, mouseY);
 
-    // 호버 상태 변경 시 다시 그리기
+    // Redraw if hover state changes
     if (wasHovering !== this.isHovering) {
       this.canvas.style.cursor = this.isHovering ? "pointer" : "default";
-      // 플로팅 중이 아니면 한 번만 그리기
+      // Redraw only once if not floating
       if (!this.isFloating) {
         this.draw();
       }
@@ -326,24 +326,24 @@ export class LandingScreen {
   }
 
   /**
-   * 클릭 처리
+   * Handle click
    */
   private handleClick(e: MouseEvent) {
-    // 애니메이션 중에는 클릭 비활성화
+    // Disable click during animation
     if (this.isAnimating) return;
 
     const rect = this.canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // 버튼 클릭 체크
+    // Check button click
     if (this.isPointInButton(mouseX, mouseY)) {
       this.onStart();
     }
   }
 
   /**
-   * 점이 버튼 안에 있는지 확인
+   * Check if a point is inside the button
    */
   private isPointInButton(x: number, y: number): boolean {
     return (
@@ -355,10 +355,10 @@ export class LandingScreen {
   }
 
   /**
-   * 랜딩 화면 숨기기
+   * Hide the landing screen
    */
   hide() {
-    // 애니메이션 정리
+    // Clean up animation
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
@@ -369,7 +369,7 @@ export class LandingScreen {
   }
 
   /**
-   * 랜딩 화면 보이기
+   * Show the landing screen
    */
   show() {
     this.canvas.style.display = "block";

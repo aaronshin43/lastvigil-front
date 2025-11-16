@@ -1,6 +1,6 @@
 /**
  * main.ts
- * 모든 모듈을 초기화하고 AssetLoader 실행, 로딩 후 Game 시작
+ * Initialize all modules and run AssetLoader, start Game after loading
  */
 
 import { AssetLoader } from "./core/AssetLoader";
@@ -13,7 +13,7 @@ import { LandingScreen } from "./core/LandingScreen";
 import { CountdownScreen } from "./core/CountdownScreen";
 import { GameOverScreen } from "./core/GameOverScreen";
 
-// 전역 상태 관리
+// Global state management
 let assetLoader: AssetLoader;
 let renderer: Renderer;
 let gazeCursor: GazeCursor;
@@ -24,42 +24,42 @@ let landingScreen: LandingScreen;
 let countdownScreen: CountdownScreen;
 let gameOverScreen: GameOverScreen;
 
-// 웹캠 관리
+// Webcam management
 let webcamActive = false;
 let webcamStream: MediaStream | null = null;
 let sendInterval: number | null = null;
 
-// 맵 스크롤 관리
+// Map scroll management
 let edgeHoldStartTime = 0;
-const EDGE_HOLD_THRESHOLD = 300; // 0.3초
-const EDGE_THRESHOLD = 0.1; // 화면 10% 이내
-const MIN_SCROLL_SPEED = 10; // 최소 스크롤 속도
-const MAX_SCROLL_SPEED = 50; // 최대 스크롤 속도
+const EDGE_HOLD_THRESHOLD = 300; // 0.3 seconds
+const EDGE_THRESHOLD = 0.1; // 10% of screen
+const MIN_SCROLL_SPEED = 10; // Minimum scroll speed
+const MAX_SCROLL_SPEED = 50; // Maximum scroll speed
 
-// 웨이브 추적
-let currentWave = 0; // 0으로 초기화하여 첫 웨이브도 감지
-let isShowingWaveAnnouncement = false; // 웨이브 공지 표시 중인지 확인
+// Wave tracking
+let currentWave = 0; // Initialize to 0 to detect first wave
+let isShowingWaveAnnouncement = false; // Check if wave announcement is showing
 
-// 제스처 시퀀스 추적
+// Gesture sequence tracking
 let currentGestureSequence: string | string[] = "";
 
-// 게임 초기화 상태
+// Game initialization state
 let isGameInitialized = false;
 
 /**
- * 애플리케이션 초기화
+ * Initialize application
  */
 async function init() {
-  console.log("🎮 게임 초기화 시작...");
+  // console.log("🎮 Game initialization starting...");
 
   try {
-    // 1. AssetLoader 초기화 및 에셋 로드
+    // 1. Initialize AssetLoader and load assets
     assetLoader = new AssetLoader();
-    console.log("📦 에셋 로딩 중...");
+    // console.log("📦 Loading assets...");
     await assetLoader.loadAll();
-    console.log("✅ 에셋 로딩 완료!");
+    // console.log("✅ Asset loading complete!");
 
-    // 2. LandingScreen 초기화 및 표시
+    // 2. Initialize LandingScreen and display
     landingScreen = new LandingScreen({
       canvasId: "landing-canvas",
       onStart: startGame,
@@ -75,87 +75,87 @@ async function init() {
     landingScreen.setImages(landingImages);
     landingScreen.show();
 
-    // 3. GameOverScreen 초기화
+    // 3. Initialize GameOverScreen
     gameOverScreen = new GameOverScreen({
       canvasId: "gameover-canvas",
       onRestart: () => {
-        console.log("🔄 게임 재시작");
-        // 페이지 새로고침으로 재시작
+        // console.log("🔄 Restarting game");
+        // Restart by reloading page
         window.location.reload();
       },
     });
 
-    console.log("🎬 랜딩 화면 표시");
+    // console.log("🎬 Showing landing screen");
   } catch (error) {
-    console.error("❌ 초기화 실패:", error);
-    alert("게임 초기화에 실패했습니다. 콘솔을 확인하세요.");
+    console.error("❌ Initialization failed:", error);
+    alert("Game initialization failed. Please check the console.");
   }
 }
 
 /**
- * 게임 시작 (랜딩 화면에서 Start 버튼 클릭 시)
+ * Start game (when Start button is clicked on landing screen)
  */
 function startGame() {
-  console.log("🚀 게임 시작 준비!");
+  // console.log("🚀 Preparing to start game!");
 
-  // 랜딩 화면 숨기기
+  // Hide landing screen
   landingScreen.hide();
 
-  // UI 요소들 숨기기 (카운트다운 중)
+  // Hide UI elements (during countdown)
   hideGameUI();
 
-  // 카운트다운 화면 초기화 및 시작
+  // Initialize and start countdown screen
   countdownScreen = new CountdownScreen({
     canvasId: "countdown-canvas",
   });
   
   countdownScreen.startInitialCountdown(() => {
-    console.log("⏱️ 카운트다운 완료! 실제 게임 시작");
-    // UI 요소들 다시 표시
+    // console.log("⏱️ Countdown complete! Starting game");
+    // Show UI elements again
     showGameUI();
     initializeGame();
   });
 }
 
 /**
- * 실제 게임 초기화 (카운트다운 후)
+ * Actual game initialization (after countdown)
  */
 function initializeGame() {
-  // 이미 초기화되었다면 중복 실행 방지
+  // Prevent duplicate initialization if already initialized
   if (isGameInitialized) {
-    console.warn("⚠️ 게임이 이미 초기화되어 있습니다. 중복 초기화 방지.");
+    console.warn("⚠️ Game is already initialized. Preventing duplicate initialization.");
     return;
   }
 
   try {
-    console.log("🎮 게임 초기화 시작...");
+    // console.log("🎮 Game initialization starting...");
     
-    // 3. Camera 초기화
+    // 3. Initialize Camera
     camera = new Camera({
-      worldWidth: 2148, // 백엔드 맵 크기
+      worldWidth: 2148, // Backend map size
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
     });
-    // 카메라를 맵 왼쪽 끝에서 시작 (적이 왼쪽에서 소환되도록)
+    // Start camera from left side of map (so enemies spawn from left)
     camera.setOffsetX(0);
-    console.log("📹 카메라 초기화 완료");
+    // console.log("📹 Camera initialization complete");
 
-    // 4. Renderer 초기화
+    // 4. Initialize Renderer
     renderer = new Renderer({
       backgroundCanvasId: "background-canvas",
       gameCanvasId: "circle-canvas",
       camera: camera,
       assetLoader: assetLoader,
     });
-    console.log("🎨 렌더러 초기화 완료");
+    // console.log("🎨 Renderer initialization complete");
 
-    // 5. 배경 이미지 설정
+    // 5. Set background image
     const backgroundImage = assetLoader.getMap("graveyard");
     if (backgroundImage) {
       renderer.setBackgroundImage(backgroundImage);
     }
 
-    // 6. GazeCursor 초기화
+    // 6. Initialize GazeCursor
     gazeCursor = new GazeCursor({
       chaseSpeed: 0.08,
       initialX: window.innerWidth / 2,
@@ -163,7 +163,7 @@ function initializeGame() {
       assetLoader: assetLoader,
     });
 
-    // 7. Game 초기화
+    // 7. Initialize Game
     game = new Game({
       assetLoader,
       renderer,
@@ -171,37 +171,37 @@ function initializeGame() {
       camera,
     });
 
-    // 8. Network (WebSocket) 초기화
+    // 8. Initialize Network (WebSocket)
     initNetwork();
 
-    // 9. UI 이벤트 리스너 설정
+    // 9. Set up UI event listeners
     setupUIEvents();
 
-    // 10. 게임 시작 (렌더링 루프)
+    // 10. Start game (rendering loop)
     game.start();
 
-    // 11. 맵 스크롤 로직 시작
+    // 11. Start map scroll logic
     startScrollLoop();
 
-    // 12. 웹캠 자동 시작
+    // 12. Auto-start webcam
     startWebcam();
 
-    // 초기화 완료 플래그 설정
+    // Set initialization completion flag
     isGameInitialized = true;
-    console.log("✅ 게임 초기화 완료!");
+    // console.log("✅ Game initialization complete!");
   } catch (error) {
-    console.error("❌ 게임 시작 실패:", error);
-    alert("게임 시작에 실패했습니다. 콘솔을 확인하세요.");
+    console.error("❌ Game start failed:", error);
+    alert("Game start failed. Please check the console.");
   }
 }
 
 /**
- * Network (WebSocket) 초기화
+ * Initialize Network (WebSocket)
  */
 function initNetwork() {
   const serverUrl =
     import.meta.env.VITE_VULTR_SERVER_URL || "ws://localhost:8000/ws";
-  console.log(`🌐 서버 URL: ${serverUrl}`);
+  // console.log(`🌐 Server URL: ${serverUrl}`);
 
   network = new Network({
     serverUrl,
@@ -209,69 +209,71 @@ function initNetwork() {
     maxReconnectAttempts: 5,
   });
 
-  // 이벤트 핸들러 등록
+  // Register event handlers
   network.onOpen(() => {
-    console.log("🔌 Vultr 서버에 연결되었습니다.");
+    // console.log("🔌 Connected to Vultr server.");
   });
 
   network.onMessage((data) => {
-    // 📡 백엔드 응답을 콘솔에 출력
+    // 📡 Output backend response to console
     // console.log("=".repeat(80));
-    // console.log("📡 백엔드 응답 수신:", new Date().toLocaleTimeString());
+    // console.log("📡 Backend response received:", new Date().toLocaleTimeString());
     // console.log("=".repeat(80));
     // console.log(JSON.stringify(data, null, 2));
     // console.log("=".repeat(80));
 
-    // 서버 데이터를 Game에 전달
+    // Pass server data to Game
     processServerData(data);
   });
 
   network.onError((error) => {
-    console.error("🔥 WebSocket 오류:", error);
+    console.error("🔥 WebSocket error:", error);
   });
 
   network.onClose(() => {
-    console.log("🔌 WebSocket 연결 종료");
+    // console.log("🔌 WebSocket connection closed");
   });
 
-  // 연결 시작
+  // Start connection
   network.connect();
 }
 
 /**
- * 서버 데이터 처리
+ * Process server data
  */
 function processServerData(response: any) {
-  // 1. 시선 데이터 처리 - 백엔드에서 맵 전체 기준 정규화 좌표(0-1) 수신
-  if (response.gaze) {
+  // 1. Process gaze data - receive normalized coordinates (0-1) based on entire map from backend
+  if (response.gaze && response.gaze.gaze_x !== undefined && response.gaze.gaze_y !== undefined) {
     const { gaze_x, gaze_y } = response.gaze;
 
-    // 🔍 백엔드 원본 데이터 확인
+    // 🔍 Check backend raw data
     // console.log(`🔍 RAW backend gaze:`, response.gaze);
 
-    // 정규화 좌표(0-1)를 월드/스크린 좌표로 변환
-    const WORLD_WIDTH = 2148; // 백엔드 맵 크기
+    // Convert normalized coordinates (0-1) to world/screen coordinates
+    const WORLD_WIDTH = 2148; // Backend map size
     const worldX = gaze_x * WORLD_WIDTH;
     const screenY = gaze_y * window.innerHeight;
 
-    // 카메라를 통해 월드 X를 스크린 X로 변환
+    // Convert world X to screen X through camera
     const screenX = worldX - camera.getOffsetX();
 
     // console.log(`👁️ Gaze: norm(${gaze_x.toFixed(3)}, ${gaze_y.toFixed(3)}) → world(${worldX.toFixed(0)}, ${screenY.toFixed(0)}) → screen(${screenX.toFixed(0)}, ${screenY.toFixed(0)}) | cam: ${camera.getOffsetX().toFixed(0)}`);
 
-    // GazeCursor 업데이트
+    // Update GazeCursor
     gazeCursor.setTarget(screenX, screenY);
 
-    // 스크롤 트리거: 월드 좌표 기반으로 카메라 이동
+    // Trigger scroll: move camera based on world coordinates
     checkAndScrollCamera(worldX);
   }
+  // If no gaze data, maintain previous target and stop scrolling only
+  // GazeCursor continues to update() in Renderer, so animation and image are maintained
 
-  // 2. ✨ 게임 상태 데이터 처리 (20fps로 업데이트)
+  // 2. ✨ Process game state data (update at 20fps)
   if (response.gameState) {
-    console.log(`🎮 게임 상태 업데이트:`, {
+    console.log(`🎮 Game state update:`, {
       enemies: response.gameState.enemies?.length || 0,
       effects: response.gameState.effects?.length || 0,
-      effectsData: response.gameState.effects, // 🔍 이펙트 데이터 상세 확인
+      effectsData: response.gameState.effects, // 🔍 Check effect data details
       score: response.gameState.playerScore,
       wave: response.gameState.waveNumber,
       HP: response.gameState.playerHP,
@@ -279,10 +281,10 @@ function processServerData(response: any) {
       gestureMatched: response.gameState.gestureMatched,
     });
 
-    // 제스처 시퀀스 UI 업데이트
+    // Update gesture sequence UI
     const gestureSequenceElement = document.getElementById("gesture-sequence");
     if (gestureSequenceElement && response.gameState.gestureSequence) {
-      // 배열이면 join, 문자열이면 그대로 사용
+      // If array, join; if string, use as is
       const sequenceText = Array.isArray(response.gameState.gestureSequence)
         ? response.gameState.gestureSequence.join("")
         : response.gameState.gestureSequence;
@@ -290,57 +292,57 @@ function processServerData(response: any) {
       gestureSequenceElement.textContent = sequenceText;
       currentGestureSequence = response.gameState.gestureSequence;
       
-      // 가이드가 현재 열려있다면 업데이트
+      // Update if guide is currently open
       const aslGuideContainer = document.getElementById("asl-guide-container");
       if (aslGuideContainer && aslGuideContainer.style.display === "block") {
         updateASLGuide();
       }
     }
 
-    // 제스처 시퀀스 매칭 성공 시 공격 애니메이션 실행
+    // Execute attack animation when gesture sequence matches successfully
     if (response.gameState.gestureMatched === true) {
-      console.log(`🔥 제스처 시퀀스 매칭 성공! 스킬 발동`);
+      // console.log(`🔥 Gesture sequence match successful! Skill activation`);
       renderer.playAttackAnimation();
     }
 
-    // 웨이브 변경 감지 (증가할 때만 표시하고, 중복 방지)
+    // Detect wave change (display only when increasing, prevent duplicates)
     if (response.gameState.waveNumber && 
         response.gameState.waveNumber > currentWave && 
         !isShowingWaveAnnouncement) {
-      console.log(`🌊 웨이브 변경: ${currentWave} → ${response.gameState.waveNumber}`);
+      // console.log(`🌊 Wave change: ${currentWave} → ${response.gameState.waveNumber}`);
       const newWave = response.gameState.waveNumber;
       currentWave = newWave;
       
-      // 첫 웨이브는 이미 초기 카운트다운에서 표시했으므로 스킵
+      // Skip first wave as it was already shown in initial countdown
       if (newWave > 1) {
         isShowingWaveAnnouncement = true;
         countdownScreen.showWaveAnnouncement(newWave);
         
-        // 1.5초 후 플래그 리셋 (애니메이션 duration과 동일)
+        // Reset flag after 1.5 seconds (same as animation duration)
         setTimeout(() => {
           isShowingWaveAnnouncement = false;
         }, 1500);
       }
     }
 
-    // Game 클래스에 전달하여 렌더링
+    // Pass to Game class for rendering
     game.updateGameState(response.gameState);
   }
 
-  // 3. 🎮 게임 오버 처리
+  // 3. 🎮 Handle game over
   if (response.type === "gameOver") {
-    console.log("💀 게임 오버!", {
-      finalScore: response.finalScore,
-      finalWave: response.finalWave,
-    });
+    // console.log("💀 Game over!", {
+    //   finalScore: response.finalScore,
+    //   finalWave: response.finalWave,
+    // });
 
-    // 게임 오버 화면 표시
+    // Show game over screen
     gameOverScreen.show(response.finalScore, response.finalWave);
 
-    // 게임 루프 정지
+    // Stop game loop
     game.stop();
 
-    // 웹캠 정지
+    // Stop webcam
     if (webcamActive) {
       stopWebcam();
     }
@@ -348,7 +350,7 @@ function processServerData(response: any) {
 }
 
 /**
- * UI 이벤트 설정
+ * Set up UI events
  */
 function setupUIEvents() {
   const skipButtonImg = document.getElementById(
@@ -361,28 +363,28 @@ function setupUIEvents() {
     "asl-guide-container"
   ) as HTMLDivElement;
 
-  console.log("🎮 UI 이벤트 설정 중...", {
+  console.log("🎮 Setting up UI events...", {
     skipButtonImg,
     guideButton,
     aslGuideContainer,
   });
 
-  // 새 스킵 버튼 이미지
+  // New skip button image
   if (skipButtonImg) {
     skipButtonImg.addEventListener("click", () => {
-      console.log("⏭️ 스킬 건너뛰기 요청 (이미지 버튼)");
+      // console.log("⏭️ Skip skill request (image button)");
       if (network && network.isConnected()) {
         network.send(JSON.stringify({ type: "skipGesture" }));
-        console.log("📤 skipGesture 메시지 전송");
+        // console.log("📤 Sending skipGesture message");
       } else {
-        console.warn("⚠️ 서버에 연결되지 않았습니다.");
+        console.warn("⚠️ Not connected to server.");
       }
     });
   } else {
-    console.error("❌ skip-button 이미지를 찾을 수 없습니다.");
+    console.error("❌ Cannot find skip-button image.");
   }
 
-  // Guide 버튼 클릭 - ASL 제스처 가이드 토글
+  // Guide button click - Toggle ASL gesture guide
   if (guideButton && aslGuideContainer) {
     let isGuideVisible = false;
     
@@ -390,55 +392,55 @@ function setupUIEvents() {
       isGuideVisible = !isGuideVisible;
       
       if (isGuideVisible) {
-        // 가이드 표시
+        // Show guide
         updateASLGuide();
-        console.log("📖 ASL 제스처 가이드 표시");
+        // console.log("📖 Showing ASL gesture guide");
       } else {
-        // 가이드 숨김
+        // Hide guide
         aslGuideContainer.style.display = "none";
-        console.log("📖 ASL 제스처 가이드 숨김");
+        // console.log("📖 Hiding ASL gesture guide");
       }
     });
   } else {
-    console.error("❌ guide-button 또는 asl-guide-container를 찾을 수 없습니다.");
+    console.error("❌ Cannot find guide-button or asl-guide-container.");
   }
 }
 
 /**
- * ASL 제스처 가이드 업데이트 (현재 시퀀스에 맞춰)
+ * Update ASL gesture guide (according to current sequence)
  */
 function updateASLGuide() {
   const aslGuideContainer = document.getElementById("asl-guide-container") as HTMLDivElement;
   const aslGuideImages = document.getElementById("asl-guide-images") as HTMLDivElement;
   
   if (!aslGuideContainer || !aslGuideImages) {
-    console.error("❌ ASL 가이드 컨테이너를 찾을 수 없습니다.");
+    console.error("❌ Cannot find ASL guide container.");
     return;
   }
 
-  // 현재 제스처 시퀀스가 없으면 숨김
+  // Hide if no current gesture sequence
   if (!currentGestureSequence) {
-    console.warn("⚠️ 현재 제스처 시퀀스가 없습니다.", currentGestureSequence);
+    console.warn("⚠️ No current gesture sequence.", currentGestureSequence);
     aslGuideContainer.style.display = "none";
     return;
   }
 
-  // 배열이면 그대로 사용, 문자열이면 split
+  // Use as is if array, split if string
   const letters = Array.isArray(currentGestureSequence)
     ? currentGestureSequence
     : currentGestureSequence.split("");
   
-  // 빈 배열이면 숨김
+  // Hide if empty array
   if (letters.length === 0) {
-    console.warn("⚠️ 제스처 시퀀스가 비어있습니다.");
+    console.warn("⚠️ Gesture sequence is empty.");
     aslGuideContainer.style.display = "none";
     return;
   }
 
-  // 기존 이미지 모두 제거
+  // Remove all existing images
   aslGuideImages.innerHTML = "";
   
-  console.log(`📖 ASL 가이드 생성:`, letters, `(${letters.length}개 문자)`);
+  // console.log(`📖 Creating ASL guide:`, letters, `(${letters.length} characters)`);
   
   letters.forEach((letter) => {
     const upperLetter = letter.toUpperCase();
@@ -467,7 +469,7 @@ function updateASLGuide() {
 }
 
 /**
- * 웹캠 시작
+ * Start webcam
  */
 function startWebcam() {
   navigator.mediaDevices
@@ -477,7 +479,7 @@ function startWebcam() {
       const video = document.getElementById("video") as HTMLVideoElement;
       
       if (!video) {
-        console.error("❌ video 엘리먼트를 찾을 수 없습니다.");
+        console.error("❌ Cannot find video element.");
         return;
       }
       
@@ -486,32 +488,32 @@ function startWebcam() {
       video.onloadedmetadata = () => {
         webcamActive = true;
         
-        // // 버튼이 있으면 업데이트 (없어도 계속 진행)
+        // // Update button if it exists (continue even if not)
         // const btn = document.getElementById("webcam-toggle") as HTMLButtonElement;
         // if (btn) {
         //   btn.textContent = "Stop Webcam";
         //   btn.classList.add("active");
         // }
 
-        // 프레임 전송 시작 (20fps)
+        // Start frame transmission (20fps)
         sendInterval = window.setInterval(() => {
           sendFrameToServer();
         }, 50);
       };
       
-      // play() 명시적으로 호출 (자동 재생을 위해)
+      // Explicitly call play() (for autoplay)
       video.play().catch(err => {
-        console.error("❌ 비디오 재생 실패:", err);
+        console.error("❌ Video playback failed:", err);
       });
     })
     .catch((err) => {
-      console.error("❌ 웹캠 오류:", err);
-      alert("웹캠을 활성화할 수 없습니다.");
+      console.error("❌ Webcam error:", err);
+      alert("Cannot activate webcam.");
     });
 }
 
 /**
- * 웹캠 중지
+ * Stop webcam
  */
 function stopWebcam() {
   if (webcamStream) {
@@ -532,21 +534,21 @@ function stopWebcam() {
   btn.textContent = "Start Webcam";
   btn.classList.remove("active");
 
-  // 커서 리셋
+  // Reset cursor
   gazeCursor.setPosition(window.innerWidth / 2, window.innerHeight / 2);
 
-  // 카메라 오프셋은 유지 (스크롤 위치 유지)
-  // camera.setOffsetX(0); // 주석 처리
+  // Maintain camera offset (keep scroll position)
+  // camera.setOffsetX(0); // commented out
   edgeHoldStartTime = 0;
-  console.log("📹 Webcam stopped, camera position maintained");
+  // console.log("📹 Webcam stopped, camera position maintained");
 }
 
 /**
- * 프레임을 서버로 전송
+ * Send frame to server
  */
 function sendFrameToServer() {
   if (!network.isConnected()) {
-    console.warn("⚠️ 서버 연결 끊김 - 프레임 전송 불가");
+    console.warn("⚠️ Server connection lost - cannot send frame");
     return;
   }
 
@@ -554,13 +556,13 @@ function sendFrameToServer() {
   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
   
   if (!video || !canvas) {
-    console.error("❌ video 또는 canvas 엘리먼트를 찾을 수 없습니다.");
+    console.error("❌ Cannot find video or canvas element.");
     return;
   }
   
   const context = canvas.getContext("2d");
   if (!context) {
-    console.error("❌ canvas context를 가져올 수 없습니다.");
+    console.error("❌ Cannot get canvas context.");
     return;
   }
 
@@ -570,18 +572,18 @@ function sendFrameToServer() {
 }
 
 /**
- * 월드 좌표 기반 카메라 스크롤 체크
+ * Check camera scroll based on world coordinates
  */
 function checkAndScrollCamera(worldX: number) {
-  const WORLD_WIDTH = 2148; // 백엔드 맵 크기
+  const WORLD_WIDTH = 2148; // Backend map size
   const cameraOffsetX = camera.getOffsetX();
   const viewportWidth = camera.getViewportWidth();
 
-  // 현재 카메라가 보는 월드 영역
+  // Current world area visible by camera
   const cameraLeft = cameraOffsetX;
   const cameraRight = cameraOffsetX + viewportWidth;
 
-  // 스크롤 트리거 영역 (뷰포트의 10%)
+  // Scroll trigger area (10% of viewport)
   const scrollMargin = viewportWidth * EDGE_THRESHOLD;
   const leftScrollZone = cameraLeft + scrollMargin;
   const rightScrollZone = cameraRight - scrollMargin;
@@ -589,7 +591,7 @@ function checkAndScrollCamera(worldX: number) {
   const isInLeftZone = worldX < leftScrollZone;
   const isInRightZone = worldX > rightScrollZone;
 
-  // 🔍 스크롤 존 디버깅 (진입 시만 로그)
+  // 🔍 Scroll zone debugging (log only on entry)
   // const wasInZone = edgeHoldStartTime !== 0;
   // const nowInZone = isInLeftZone || isInRightZone;
   // if (nowInZone && !wasInZone) {
@@ -607,10 +609,10 @@ function checkAndScrollCamera(worldX: number) {
     if (holdDuration >= EDGE_HOLD_THRESHOLD) {
       const maxOffset = WORLD_WIDTH - viewportWidth;
 
-      // 동적 스크롤 속도 계산 (고개를 많이 돌릴수록 빠르게)
+      // Calculate dynamic scroll speed (faster when head is turned more)
       let scrollSpeed: number;
       if (isInLeftZone) {
-        // 왼쪽 존: leftScrollZone에 가까울수록 빠르게
+        // Left zone: faster closer to leftScrollZone edge
         const distanceFromZoneEdge = leftScrollZone - worldX;
         const normalizedDistance = Math.min(
           distanceFromZoneEdge / scrollMargin,
@@ -620,7 +622,7 @@ function checkAndScrollCamera(worldX: number) {
           MIN_SCROLL_SPEED +
           (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * normalizedDistance;
       } else {
-        // 오른쪽 존: rightScrollZone에서 멀수록 빠르게
+        // Right zone: faster farther from rightScrollZone edge
         const distanceFromZoneEdge = worldX - rightScrollZone;
         const normalizedDistance = Math.min(
           distanceFromZoneEdge / scrollMargin,
@@ -631,12 +633,12 @@ function checkAndScrollCamera(worldX: number) {
           (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * normalizedDistance;
       }
 
-      // 카메라 이동
+      // Move camera
       if (isInLeftZone && cameraOffsetX > 0) {
-        camera.moveX(-scrollSpeed); // 왼쪽으로 스크롤
+        camera.moveX(-scrollSpeed); // Scroll left
         // console.log(`⬅️ Camera scroll LEFT: speed=${scrollSpeed.toFixed(1)}, offset=${camera.getOffsetX().toFixed(0)}`);
       } else if (isInRightZone && cameraOffsetX < maxOffset) {
-        camera.moveX(scrollSpeed); // 오른쪽으로 스크롤
+        camera.moveX(scrollSpeed); // Scroll right
         // console.log(`➡️ Camera scroll RIGHT: speed=${scrollSpeed.toFixed(1)}, offset=${camera.getOffsetX().toFixed(0)}`);
       } // else {
       //   console.log(`🚫 Camera at boundary: offset=${cameraOffsetX.toFixed(0)}, max=${maxOffset.toFixed(0)}`);
@@ -651,14 +653,14 @@ function checkAndScrollCamera(worldX: number) {
 }
 
 /**
- * 맵 스크롤 로직 (더 이상 사용하지 않음 - gaze 데이터에서 직접 처리)
+ * Map scroll logic (no longer used - handled directly from gaze data)
  */
 function startScrollLoop() {
-  // 스크롤은 이제 processServerData에서 gaze 좌표 기반으로 처리됨
+  // Scroll is now handled directly from gaze coordinates in processServerData
 }
 
 /**
- * UI 요소 숨기기 (카운트다운 중)
+ * Hide UI elements (during countdown)
  */
 function hideGameUI() {
   const status2 = document.getElementById("status2-display");
@@ -677,7 +679,7 @@ function hideGameUI() {
 }
 
 /**
- * UI 요소 표시 (게임 시작 시)
+ * Show UI elements (when game starts)
  */
 function showGameUI() {
   const status2 = document.getElementById("status2-display");
@@ -695,5 +697,5 @@ function showGameUI() {
   if (scoreImage) scoreImage.style.display = "block";
 }
 
-// 페이지 로드 시 초기화
+// Initialize on page load
 window.addEventListener("DOMContentLoaded", init);
