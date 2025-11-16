@@ -343,6 +343,9 @@ function setupUIEvents() {
   const skipGestureBtn = document.getElementById(
     "skip-gesture-btn"
   ) as HTMLButtonElement;
+  const skipButtonImg = document.getElementById(
+    "skip-button"
+  ) as HTMLImageElement;
   const allImage = document.getElementById("all-image") as HTMLImageElement;
 
   console.log("🎮 UI 이벤트 설정 중...", {
@@ -351,6 +354,7 @@ function setupUIEvents() {
     effectSelector,
     skillGuideToggleBtn,
     skipGestureBtn,
+    skipButtonImg,
   });
 
   // 웹캠 토글
@@ -414,7 +418,7 @@ function setupUIEvents() {
     );
   }
 
-  // 스킬 건너뛰기 버튼
+  // 스킬 건너뛰기 버튼 (기존 버튼)
   if (skipGestureBtn) {
     skipGestureBtn.addEventListener("click", () => {
       console.log("⏭️ 스킬 건너뛰기 요청");
@@ -427,6 +431,21 @@ function setupUIEvents() {
     });
   } else {
     console.error("❌ skip-gesture-btn 버튼을 찾을 수 없습니다.");
+  }
+
+  // 새 스킵 버튼 이미지
+  if (skipButtonImg) {
+    skipButtonImg.addEventListener("click", () => {
+      console.log("⏭️ 스킬 건너뛰기 요청 (이미지 버튼)");
+      if (network && network.isConnected()) {
+        network.send(JSON.stringify({ type: "skipGesture" }));
+        console.log("📤 skipGesture 메시지 전송");
+      } else {
+        console.warn("⚠️ 서버에 연결되지 않았습니다.");
+      }
+    });
+  } else {
+    console.error("❌ skip-button 이미지를 찾을 수 없습니다.");
   }
 }
 
