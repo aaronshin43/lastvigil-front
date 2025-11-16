@@ -24,6 +24,7 @@ export interface GameStateData {
   }[];
   playerGold?: number;
   playerScore?: number;
+  playerHP?: number;
   waveNumber?: number;
 }
 
@@ -116,12 +117,12 @@ export class Game {
   private updateEnemies(enemyStates: EnemyStateData[]): void {
     const currentEnemyIds = new Set(enemyStates.map((e) => e.id));
 
-    console.log(`👾 Enemy update: ${enemyStates.length} enemies from server, ${this.enemies.size} in game`);
+    // console.log(`👾 Enemy update: ${enemyStates.length} enemies from server, ${this.enemies.size} in game`);
 
     // 서버에서 제거된 적 삭제
     for (const id of this.enemies.keys()) {
       if (!currentEnemyIds.has(id)) {
-        console.log(`❌ Enemy removed: ${id}`);
+        // console.log(`❌ Enemy removed: ${id}`);
         this.enemies.delete(id);
       }
     }
@@ -139,7 +140,7 @@ export class Game {
         }
         enemy = new Enemy(enemyState.id, config, this.assetLoader);
         this.enemies.set(enemyState.id, enemy);
-        console.log(`✨ Enemy created: ${enemyState.id}, type=${enemyState.typeId}, x=${enemyState.x.toFixed(3)}, y=${enemyState.y.toFixed(3)}`);
+        // console.log(`✨ Enemy created: ${enemyState.id}, type=${enemyState.typeId}, x=${enemyState.x.toFixed(3)}, y=${enemyState.y.toFixed(3)}`);
       }
 
       // 서버 데이터로 상태 업데이트
@@ -251,9 +252,9 @@ export class Game {
       drawnEnemies++;
     }
     
-    if (drawnEnemies > 0) {
-      console.log(`👾 Drew ${drawnEnemies} enemies | camera offset: ${this.camera.getOffsetX().toFixed(0)}`);
-    }
+    // if (drawnEnemies > 0) {
+    //   console.log(`👾 Drew ${drawnEnemies} enemies | camera offset: ${this.camera.getOffsetX().toFixed(0)}`);
+    // }
 
     // 2. 이펙트 그리기
     for (const effect of this.activeEffects) {

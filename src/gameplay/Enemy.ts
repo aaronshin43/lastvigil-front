@@ -128,9 +128,9 @@ export class Enemy {
     const screenPos = camera.worldToScreen(this.x, this.y);
 
     // 🔍 디버깅: 적 위치 로그 (첫 번째 적만)
-    if (this.id.endsWith('0')) {
-      console.log(`👾 Enemy draw: id=${this.id}, world(${this.x.toFixed(0)}, ${this.y.toFixed(0)}) → screen(${screenPos.x.toFixed(0)}, ${screenPos.y.toFixed(0)})`);
-    }
+    // if (this.id.endsWith('0')) {
+    //   console.log(`👾 Enemy draw: id=${this.id}, world(${this.x.toFixed(0)}, ${this.y.toFixed(0)}) → screen(${screenPos.x.toFixed(0)}, ${screenPos.y.toFixed(0)})`);
+    // }
 
     // 화면 밖이면 그리지 않음 (최적화)
     const margin = 200;
@@ -138,9 +138,9 @@ export class Enemy {
       screenPos.x < -margin ||
       screenPos.x > camera.getViewportWidth() + margin
     ) {
-      if (this.id.endsWith('0')) {
-        console.log(`🚫 Enemy ${this.id} culled: screenX=${screenPos.x.toFixed(0)}, viewport=${camera.getViewportWidth()}`);
-      }
+      // if (this.id.endsWith('0')) {
+      //   console.log(`🚫 Enemy ${this.id} culled: screenX=${screenPos.x.toFixed(0)}, viewport=${camera.getViewportWidth()}`);
+      // }
       return;
     }
 

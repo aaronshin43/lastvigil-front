@@ -28,14 +28,14 @@ export class Camera {
    * @param deltaX 이동량 (양수: 오른쪽, 음수: 왼쪽)
    */
   moveX(deltaX: number): void {
-    const oldOffset = this.offsetX;
+    // const oldOffset = this.offsetX;
     this.offsetX += deltaX;
     this.clampOffset();
     
     // 🔍 디버깅: 실제로 이동했는지 확인
-    if (oldOffset !== this.offsetX) {
-      console.log(`📹 Camera.moveX(${deltaX}): ${oldOffset.toFixed(0)} → ${this.offsetX.toFixed(0)}`);
-    }
+    // if (oldOffset !== this.offsetX) {
+    //   console.log(`📹 Camera.moveX(${deltaX}): ${oldOffset.toFixed(0)} → ${this.offsetX.toFixed(0)}`);
+    // }
   }
 
   /**
