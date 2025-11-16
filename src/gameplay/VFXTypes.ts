@@ -85,6 +85,7 @@ export const VFX_TYPES: VFXConfig = {
     frameDuration: 50,
     loop: false,
     scale: 3,
+    yOffset: -0.2,
   },
   lightningV2: {
     path: "/assets/vfx/lightning_v2-sheet.png",
