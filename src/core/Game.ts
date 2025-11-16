@@ -172,7 +172,11 @@ export class Game {
         if (effect) {
           (effect as any).id = effectState.id; // ID 태깅
           this.activeEffects.push(effect);
-          console.log(`✨ 이펙트 생성: ${effectState.type} at (${pixelX.toFixed(0)}, ${fixedY.toFixed(0)})`);
+          console.log(
+            `✨ 이펙트 생성: ${effectState.type} at (${pixelX.toFixed(
+              0
+            )}, ${fixedY.toFixed(0)})`
+          );
         }
       }
     }
@@ -201,6 +205,11 @@ export class Game {
   private updateAnimations(deltaTime: number): void {
     // 시선 커서 스무딩
     this.gazeCursor.update();
+
+    // 적 애니메이션 업데이트
+    for (const enemy of this.enemies.values()) {
+      enemy.updateAnimation(deltaTime);
+    }
 
     // 이펙트 업데이트
     for (const effect of this.activeEffects) {
