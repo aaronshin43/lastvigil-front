@@ -119,7 +119,7 @@ export class Renderer {
       this.wizardElapsedTime = 0;
       console.log("💥 플레이어 피격!");
     }
-    
+
     this.previousWitchHP = currentHP;
     this.witchHP = currentHP;
     this.witchMaxHP = maxHP;
@@ -131,9 +131,11 @@ export class Renderer {
    */
   playAttackAnimation(): void {
     // 이미 공격 중이거나 hurt 애니메이션 중이면 무시
-    if (this.wizardAnimationState === "attack" || 
-        this.wizardAnimationState === "attack2" ||
-        this.wizardAnimationState === "hurt") {
+    if (
+      this.wizardAnimationState === "attack" ||
+      this.wizardAnimationState === "attack2" ||
+      this.wizardAnimationState === "hurt"
+    ) {
       return;
     }
 
@@ -516,7 +518,7 @@ export class Renderer {
 
     // 시선 커서 업데이트 및 그리기
     if (this.gazeCursor) {
-      this.gazeCursor.update();
+      this.gazeCursor.update(deltaTime);
       this.gazeCursor.draw(this.gameCtx);
     }
 
@@ -546,7 +548,7 @@ export class Renderer {
     if (this.wizardElapsedTime >= currentConfig.frameDuration) {
       this.wizardElapsedTime -= currentConfig.frameDuration;
       this.wizardCurrentFrame++;
-      
+
       // hurt 애니메이션이 끝나면 idle로 복귀
       if (this.wizardAnimationState === "hurt") {
         if (this.wizardCurrentFrame >= WIZARD_SPRITES.hurt.frameCount) {
@@ -567,10 +569,10 @@ export class Renderer {
           this.wizardAnimationState = "idle";
           this.wizardCurrentFrame = 0;
         }
-      }
-      else {
+      } else {
         // idle 애니메이션 루프
-        this.wizardCurrentFrame = this.wizardCurrentFrame % currentConfig.frameCount;
+        this.wizardCurrentFrame =
+          this.wizardCurrentFrame % currentConfig.frameCount;
       }
     }
   }

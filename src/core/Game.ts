@@ -62,7 +62,7 @@ export class Game {
     this.renderer = config.renderer;
     this.gazeCursor = config.gazeCursor;
     this.camera = config.camera;
-    
+
     // 플레이어 초기화
     this.player = new Player(this.assetLoader);
   }
@@ -113,7 +113,7 @@ export class Game {
     if (state.playerHP !== undefined) {
       const maxHP = 100;
       this.player.updateHP(state.playerHP, maxHP);
-      
+
       // Renderer의 Witch HP도 업데이트 (UI용)
       const isDead = state.playerHP <= 0;
       this.renderer.updateWitchHP(state.playerHP, maxHP, isDead);
@@ -232,8 +232,8 @@ export class Game {
    */
   private updateAnimations(deltaTime: number): void {
     // 시선 커서 스무딩
-    this.gazeCursor.update();
-    
+    this.gazeCursor.update(deltaTime);
+
     // 플레이어 애니메이션 업데이트
     this.player.update(deltaTime);
 
@@ -272,7 +272,7 @@ export class Game {
       enemy.draw(ctx, this.camera);
       drawnEnemies++;
     }
-    
+
     // if (drawnEnemies > 0) {
     //   console.log(`👾 Drew ${drawnEnemies} enemies | camera offset: ${this.camera.getOffsetX().toFixed(0)}`);
     // }
@@ -281,7 +281,7 @@ export class Game {
     for (const effect of this.activeEffects) {
       effect.draw(ctx, this.camera);
     }
-    
+
     // 3. 플레이어는 Renderer의 배경 레이어에서 그려짐 (중복 방지)
     // this.player.draw(ctx, this.camera);
 

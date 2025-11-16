@@ -1,25 +1,23 @@
 /**
  * GazeCursor.ts
- * 시선 커서 객체 - 60fps 스무딩 및 캔버스 그리기 담당
+ * 시선 커서 객체 - Magic Circle 스프라이트 애니메이션 적용
  * 서버로부터 받은 시선 데이터를 부드럽게 보간하여 화면에 표시
  */
 
+import type { AssetLoader } from "../core/AssetLoader";
+
 export interface GazeCursorConfig {
-  radius?: number; // 커서 반지름 (기본: 55)
+  size?: number; // 커서 크기 (기본: 110)
   chaseSpeed?: number; // 추격 속도 0~1 (기본: 0.08)
-  fillColor?: string; // 내부 채우기 색상 (기본: 반투명 검정)
-  strokeColor?: string; // 테두리 색상 (기본: 파란색)
-  strokeWidth?: number; // 테두리 두께 (기본: 2)
   initialX?: number; // 초기 X 좌표
   initialY?: number; // 초기 Y 좌표
+  assetLoader: AssetLoader; // AssetLoader 필수
 }
 
 export class GazeCursor {
-  private radius: number;
+  private size: number;
   private chaseSpeed: number;
-  private fillColor: string;
-  private strokeColor: string;
-  private strokeWidth: number;
+  private assetLoader: AssetLoader;
 
   // 목표 위치 (서버로부터 받은 데이터)
   private targetX: number;
@@ -29,18 +27,43 @@ export class GazeCursor {
   private currentX: number;
   private currentY: number;
 
-  constructor(config: GazeCursorConfig = {}) {
-    this.radius = config.radius ?? 55;
+  // 애니메이션 관련
+  private currentFrame: number = 0;
+  private frameTimer: number = 0;
+  private spriteImage: HTMLImageElement | null = null;
+  private frameWidth: number = 512;
+  private frameHeight: number = 512;
+  private frameCount: number = 4;
+  private frameDuration: number = 150;
+
+  constructor(config: GazeCursorConfig) {
+    this.size = config.size ?? 220;
     this.chaseSpeed = config.chaseSpeed ?? 0.08;
-    this.fillColor = config.fillColor ?? "rgba(0, 0, 0, 0.1)";
-    this.strokeColor = config.strokeColor ?? "#0066FF";
-    this.strokeWidth = config.strokeWidth ?? 2;
+    this.assetLoader = config.assetLoader;
 
     // 초기 위치 설정
     this.targetX = config.initialX ?? 0;
     this.targetY = config.initialY ?? 0;
     this.currentX = this.targetX;
     this.currentY = this.targetY;
+
+    // 스프라이트 로드
+    this.loadSprite();
+  }
+
+  /**
+   * Magic Circle 스프라이트 로드
+   */
+  private loadSprite(): void {
+    this.spriteImage = this.assetLoader.getMagicCircle();
+    const metadata = this.assetLoader.getMagicCircleMetadata();
+
+    if (metadata) {
+      this.frameWidth = metadata.frameWidth;
+      this.frameHeight = metadata.frameHeight;
+      this.frameCount = metadata.frameCount;
+      this.frameDuration = metadata.frameDuration;
+    }
   }
 
   /**
@@ -49,25 +72,34 @@ export class GazeCursor {
    * @param y 목표 Y 좌표
    */
   setTarget(x: number, y: number): void {
+    const halfSize = this.size / 2;
     // 화면 경계 제한
     this.targetX = Math.max(
-      this.radius,
-      Math.min(x, window.innerWidth - this.radius)
+      halfSize,
+      Math.min(x, window.innerWidth - halfSize)
     );
     this.targetY = Math.max(
-      this.radius,
-      Math.min(y, window.innerHeight - this.radius)
+      halfSize,
+      Math.min(y, window.innerHeight - halfSize)
     );
   }
 
   /**
    * 시선 커서 업데이트 (매 프레임 호출)
-   * 현재 위치를 목표 위치로 부드럽게 이동 (선형 보간)
+   * 현재 위치를 목표 위치로 부드럽게 이동 및 애니메이션 업데이트
+   * @param deltaTime 이전 프레임으로부터 경과 시간 (ms)
    */
-  update(): void {
+  update(deltaTime: number = 16): void {
     // 선형 보간을 사용한 부드러운 추적
     this.currentX += (this.targetX - this.currentX) * this.chaseSpeed;
     this.currentY += (this.targetY - this.currentY) * this.chaseSpeed;
+
+    // 애니메이션 프레임 업데이트
+    this.frameTimer += deltaTime;
+    if (this.frameTimer >= this.frameDuration) {
+      this.currentFrame = (this.currentFrame + 1) % this.frameCount;
+      this.frameTimer = 0;
+    }
   }
 
   /**
@@ -75,18 +107,22 @@ export class GazeCursor {
    * @param ctx 2D 렌더링 컨텍스트
    */
   draw(ctx: CanvasRenderingContext2D): void {
-    // 반투명 원형 배경
-    ctx.fillStyle = this.fillColor;
-    ctx.beginPath();
-    ctx.arc(this.currentX, this.currentY, this.radius, 0, 2 * Math.PI);
-    ctx.fill();
+    if (!this.spriteImage) return;
 
-    // 테두리
-    ctx.strokeStyle = this.strokeColor;
-    ctx.lineWidth = this.strokeWidth;
-    ctx.beginPath();
-    ctx.arc(this.currentX, this.currentY, this.radius, 0, 2 * Math.PI);
-    ctx.stroke();
+    const halfSize = this.size / 2;
+
+    // 스프라이트시트에서 현재 프레임 추출
+    ctx.drawImage(
+      this.spriteImage,
+      this.currentFrame * this.frameWidth, // source X
+      0, // source Y
+      this.frameWidth, // source width
+      this.frameHeight, // source height
+      this.currentX - halfSize, // destination X
+      this.currentY - halfSize, // destination Y
+      this.size, // destination width
+      this.size // destination height
+    );
   }
 
   /**
@@ -114,10 +150,10 @@ export class GazeCursor {
   }
 
   /**
-   * 커서 반지름 반환
+   * 커서 반지름 반환 (충돌 체크용)
    */
   getRadius(): number {
-    return this.radius;
+    return this.size / 2;
   }
 
   /**
@@ -128,11 +164,10 @@ export class GazeCursor {
   }
 
   /**
-   * 커서 색상 변경 (상태 표시용)
+   * 커서 크기 설정
    */
-  setColors(fillColor: string, strokeColor: string): void {
-    this.fillColor = fillColor;
-    this.strokeColor = strokeColor;
+  setSize(size: number): void {
+    this.size = size;
   }
 
   /**
@@ -141,13 +176,14 @@ export class GazeCursor {
    * @param canvasHeight 캔버스 높이
    */
   clampToBounds(canvasWidth: number, canvasHeight: number): void {
+    const halfSize = this.size / 2;
     this.targetX = Math.max(
-      this.radius,
-      Math.min(this.targetX, canvasWidth - this.radius)
+      halfSize,
+      Math.min(this.targetX, canvasWidth - halfSize)
     );
     this.targetY = Math.max(
-      this.radius,
-      Math.min(this.targetY, canvasHeight - this.radius)
+      halfSize,
+      Math.min(this.targetY, canvasHeight - halfSize)
     );
   }
 

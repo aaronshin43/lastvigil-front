@@ -52,17 +52,17 @@ async function init() {
       canvasId: "landing-canvas",
       onStart: startGame,
     });
-    
+
     const landingImages = {
       landing: assetLoader.getMap("landing")!,
       flourishOrnament: assetLoader.getMap("flourishOrnament")!,
       landingTitle: assetLoader.getMap("landingTitle")!,
       startButton: assetLoader.getMap("startButton")!,
     };
-    
+
     landingScreen.setImages(landingImages);
     landingScreen.show();
-    
+
     // 3. GameOverScreen 초기화
     gameOverScreen = new GameOverScreen({
       canvasId: "gameover-canvas",
@@ -72,7 +72,7 @@ async function init() {
         window.location.reload();
       },
     });
-    
+
     console.log("🎬 랜딩 화면 표시");
   } catch (error) {
     console.error("❌ 초기화 실패:", error);
@@ -85,10 +85,10 @@ async function init() {
  */
 function startGame() {
   console.log("🚀 게임 시작!");
-  
+
   // 랜딩 화면 숨기기
   landingScreen.hide();
-  
+
   try {
     // 3. Camera 초기화
     camera = new Camera({
@@ -117,10 +117,10 @@ function startGame() {
 
     // 6. GazeCursor 초기화
     gazeCursor = new GazeCursor({
-      radius: 55,
       chaseSpeed: 0.08,
       initialX: window.innerWidth / 2,
       initialY: window.innerHeight / 2,
+      assetLoader: assetLoader,
     });
 
     // 7. Game 초기화
@@ -256,13 +256,13 @@ function processServerData(response: any) {
       finalScore: response.finalScore,
       finalWave: response.finalWave,
     });
-    
+
     // 게임 오버 화면 표시
     gameOverScreen.show(response.finalScore, response.finalWave);
-    
+
     // 게임 루프 정지
     game.stop();
-    
+
     // 웹캠 정지
     if (webcamActive) {
       stopWebcam();
@@ -324,11 +324,13 @@ function setupUIEvents() {
       const normalizedX = pos.x / window.innerWidth;
 
       const testGameState = game.getLatestGameState();
-      testGameState.effects = [{
-        id: `test_${Date.now()}`,
-        type: selectedEffect,
-        x: normalizedX, // 정규화된 x 좌표 (0.0~1.0)
-      }];
+      testGameState.effects = [
+        {
+          id: `test_${Date.now()}`,
+          type: selectedEffect,
+          x: normalizedX, // 정규화된 x 좌표 (0.0~1.0)
+        },
+      ];
       // console.log(`📍 스킬 발동 좌표: normalizedX=${normalizedX.toFixed(3)} (픽셀: ${pos.x.toFixed(0)})`);
       game.updateGameState(testGameState);
     });
