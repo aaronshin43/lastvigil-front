@@ -99,11 +99,45 @@
         background: #f5f5f5;
       }
 
+      /* all.png 이미지 */
+      #all-image {
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        width: 300px; /* 원본의 50% */
+        height: auto;
+        z-index: 90;
+        opacity: 0.9;
+        display: none; /* 기본적으로 숨김 */
+      }
+      #all-image.visible {
+        display: block;
+      }
+
+      /* 스킬 가이드 토글 버튼 */
+      #skill-guide-toggle {
+        position: fixed;
+        top: 170px;
+        right: 20px;
+        padding: 15px 30px;
+        font-size: 16px;
+        background: #2196f3;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 100;
+        font-weight: bold;
+      }
+      #skill-guide-toggle:hover {
+        background: #1976d2;
+      }
+
       /* 게임 UI */
       #game-ui {
         position: fixed;
         top: 20px;
-        left: 20px;
+        left: 420px; /* all.png 오른쪽으로 이동 */
         color: white;
         font-family: "Arial", sans-serif;
         z-index: 100;
@@ -120,6 +154,9 @@
     <canvas id="background-canvas"></canvas>
     <canvas id="circle-canvas"></canvas>
 
+    <!-- all.png 이미지 -->
+    <img id="all-image" src="./public/assets/maps/all.png" alt="All Skills" />
+
     <!-- 게임 UI -->
     <div id="game-ui">
       <div id="score">Score: 0</div>
@@ -130,6 +167,7 @@
 
     <button id="webcam-toggle">Start Webcam</button>
     <button id="effect-test-btn">Test Effect</button>
+    <button id="skill-guide-toggle">Skill Guide</button>
     <select id="effect-selector">
       <option value="fireHammerRed">Fire Hammer (Red)</option>
       <option value="fireSlash">Fire Slash</option>

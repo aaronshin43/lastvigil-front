@@ -168,13 +168,13 @@ function processServerData(response: any) {
 
   // 3. ✨ 게임 상태 데이터 처리 (20fps로 업데이트)
   if (response.gameState) {
-    console.log(`🎮 게임 상태 업데이트:`, {
-      enemies: response.gameState.enemies?.length || 0,
-      effects: response.gameState.effects?.length || 0,
-      effectsData: response.gameState.effects, // 🔍 이펙트 데이터 상세 확인
-      score: response.gameState.playerScore,
-      wave: response.gameState.waveNumber,
-    });
+    // console.log(`🎮 게임 상태 업데이트:`, {
+    //   enemies: response.gameState.enemies?.length || 0,
+    //   effects: response.gameState.effects?.length || 0,
+    //   effectsData: response.gameState.effects, // 🔍 이펙트 데이터 상세 확인
+    //   score: response.gameState.playerScore,
+    //   wave: response.gameState.waveNumber,
+    // });
 
     // Game 클래스에 전달하여 렌더링
     game.updateGameState(response.gameState);
@@ -194,11 +194,16 @@ function setupUIEvents() {
   const effectSelector = document.getElementById(
     "effect-selector"
   ) as HTMLSelectElement;
+  const skillGuideToggleBtn = document.getElementById(
+    "skill-guide-toggle"
+  ) as HTMLButtonElement;
+  const allImage = document.getElementById("all-image") as HTMLImageElement;
 
   console.log("🎮 UI 이벤트 설정 중...", {
     webcamToggleBtn,
     effectTestBtn,
     effectSelector,
+    skillGuideToggleBtn,
   });
 
   // 웹캠 토글
@@ -230,11 +235,11 @@ function setupUIEvents() {
       const normalizedX = pos.x / window.innerWidth;
       
       const testGameState = game.getLatestGameState();
-      testGameState.effects.push({
+      testGameState.effects = [{
         id: `test_${Date.now()}`,
         type: selectedEffect,
         x: normalizedX, // 정규화된 x 좌표 (0.0~1.0)
-      });
+      }];
       console.log(`📍 스킬 발동 좌표: normalizedX=${normalizedX.toFixed(3)} (픽셀: ${pos.x.toFixed(0)})`);
       game.updateGameState(testGameState);
     });
@@ -242,6 +247,18 @@ function setupUIEvents() {
     console.error(
       "❌ effect-test-btn 버튼 또는 effect-selector를 찾을 수 없습니다."
     );
+  }
+
+  // 스킬 가이드 토글
+  if (skillGuideToggleBtn && allImage) {
+    skillGuideToggleBtn.addEventListener("click", () => {
+      allImage.classList.toggle("visible");
+      const isVisible = allImage.classList.contains("visible");
+      skillGuideToggleBtn.textContent = isVisible ? "Hide Guide" : "Skill Guide";
+      console.log(`📖 스킬 가이드 ${isVisible ? "표시" : "숨김"}`);
+    });
+  } else {
+    console.error("❌ skill-guide-toggle 버튼 또는 all-image를 찾을 수 없습니다.");
   }
 }
 
