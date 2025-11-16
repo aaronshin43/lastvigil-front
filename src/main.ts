@@ -101,6 +101,9 @@ function startGame() {
   // 랜딩 화면 숨기기
   landingScreen.hide();
 
+  // UI 요소들 숨기기 (카운트다운 중)
+  hideGameUI();
+
   // 카운트다운 화면 초기화 및 시작
   countdownScreen = new CountdownScreen({
     canvasId: "countdown-canvas",
@@ -108,6 +111,8 @@ function startGame() {
   
   countdownScreen.startInitialCountdown(() => {
     console.log("⏱️ 카운트다운 완료! 실제 게임 시작");
+    // UI 요소들 다시 표시
+    showGameUI();
     initializeGame();
   });
 }
@@ -650,6 +655,44 @@ function checkAndScrollCamera(worldX: number) {
  */
 function startScrollLoop() {
   // 스크롤은 이제 processServerData에서 gaze 좌표 기반으로 처리됨
+}
+
+/**
+ * UI 요소 숨기기 (카운트다운 중)
+ */
+function hideGameUI() {
+  const status2 = document.getElementById("status2-display");
+  const guideButton = document.getElementById("guide-button");
+  const skipButton = document.getElementById("skip-button");
+  const gameUI = document.getElementById("game-ui");
+  const topFrame = document.getElementById("top-frame");
+  const scoreImage = document.getElementById("score-image");
+  
+  if (status2) status2.style.display = "none";
+  if (guideButton) guideButton.style.display = "none";
+  if (skipButton) skipButton.style.display = "none";
+  if (gameUI) gameUI.style.display = "none";
+  if (topFrame) topFrame.style.display = "none";
+  if (scoreImage) scoreImage.style.display = "none";
+}
+
+/**
+ * UI 요소 표시 (게임 시작 시)
+ */
+function showGameUI() {
+  const status2 = document.getElementById("status2-display");
+  const guideButton = document.getElementById("guide-button");
+  const skipButton = document.getElementById("skip-button");
+  const gameUI = document.getElementById("game-ui");
+  const topFrame = document.getElementById("top-frame");
+  const scoreImage = document.getElementById("score-image");
+  
+  if (status2) status2.style.display = "block";
+  if (guideButton) guideButton.style.display = "block";
+  if (skipButton) skipButton.style.display = "block";
+  if (gameUI) gameUI.style.display = "block";
+  if (topFrame) topFrame.style.display = "block";
+  if (scoreImage) scoreImage.style.display = "block";
 }
 
 // 페이지 로드 시 초기화
