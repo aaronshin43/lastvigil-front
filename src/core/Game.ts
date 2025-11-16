@@ -7,6 +7,7 @@
 import { AssetLoader } from "./AssetLoader";
 import { Renderer } from "./Renderer";
 import { GazeCursor } from "../gameplay/GazeCursor";
+import { AudioManager } from "./AudioManager";
 import { Effect } from "../gameplay/Effect";
 import { Enemy, type EnemyStateData } from "../gameplay/Enemy";
 import { getEnemyConfig } from "../gameplay/EnemyTypes";
@@ -34,6 +35,7 @@ export interface GameConfig {
   renderer: Renderer;
   gazeCursor: GazeCursor;
   camera: Camera;
+  audioManager: AudioManager;
 }
 
 export class Game {
@@ -41,6 +43,7 @@ export class Game {
   private renderer: Renderer;
   private gazeCursor: GazeCursor;
   private camera: Camera;
+  private audioManager: AudioManager;
 
   // 렌더링할 객체들 (서버 데이터 기반)
   private enemies: Map<string, Enemy> = new Map();
@@ -62,6 +65,7 @@ export class Game {
     this.renderer = config.renderer;
     this.gazeCursor = config.gazeCursor;
     this.camera = config.camera;
+    this.audioManager = config.audioManager;
 
     // 플레이어 초기화
     this.player = new Player(this.assetLoader);
@@ -204,6 +208,10 @@ export class Game {
         if (effect) {
           (effect as any).id = effectState.id; // ID 태깅
           this.activeEffects.push(effect);
+          
+          // 🔊 효과음 재생
+          this.audioManager.playVFXSound(effectState.type);
+          
           console.log(
             `✨ 이펙트 생성: ${effectState.type} at world(${worldX.toFixed(
               0

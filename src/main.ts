@@ -179,6 +179,7 @@ function initializeGame() {
       renderer,
       gazeCursor,
       camera,
+      audioManager,
     });
 
     // 8. Network (WebSocket) 초기화
