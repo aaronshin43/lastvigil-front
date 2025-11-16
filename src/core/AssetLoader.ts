@@ -282,4 +282,31 @@ export class AssetLoader {
   getVFXList(): string[] {
     return Object.keys(ASSET_MANIFEST.vfx);
   }
+
+  /**
+   * 경로로 이미지 가져오기 (범용)
+   */
+  getImageByPath(path: string): HTMLImageElement | null {
+    // loadedImages에서 경로로 검색
+    for (const [key, image] of this.loadedImages.entries()) {
+      // 각 타입별로 원본 경로 확인
+      const mapEntry = Object.entries(ASSET_MANIFEST.maps).find(
+        ([name]) => `map_${name}` === key
+      );
+      if (mapEntry && mapEntry[1] === path) return image;
+
+      const spriteEntry = Object.entries(ASSET_MANIFEST.sprites).find(
+        ([name]) => `sprite_${name}` === key
+      );
+      if (spriteEntry && spriteEntry[1] === path) return image;
+
+      const vfxEntry = Object.entries(ASSET_MANIFEST.vfx).find(
+        ([name]) => `vfx_${name}` === key
+      );
+      if (vfxEntry && vfxEntry[1].path === path) return image;
+    }
+
+    console.warn(`이미지를 찾을 수 없습니다: ${path}`);
+    return null;
+  }
 }

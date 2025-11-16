@@ -3,18 +3,18 @@
  * 모든 모듈을 초기화하고 AssetLoader 실행, 로딩 후 Game 시작
  */
 
-import { AssetLoader } from './core/AssetLoader';
-import { Renderer } from './core/Renderer';
-import { GazeCursor } from './gameplay/GazeCursor';
-import { Effect } from './gameplay/Effect';
-import { Network } from './services/Network';
+import { AssetLoader } from "./core/AssetLoader";
+import { Renderer } from "./core/Renderer";
+import { GazeCursor } from "./gameplay/GazeCursor";
+import { Game } from "./core/Game";
+import { Network } from "./services/Network";
 
 // 전역 상태 관리
 let assetLoader: AssetLoader;
 let renderer: Renderer;
 let gazeCursor: GazeCursor;
+let game: Game;
 let network: Network;
-let activeEffects: Effect[] = [];
 
 // 웹캠 관리
 let webcamActive = false;
@@ -31,24 +31,24 @@ const SCROLL_SPEED = 20;
  * 애플리케이션 초기화
  */
 async function init() {
-  console.log('🎮 게임 초기화 시작...');
+  console.log("🎮 게임 초기화 시작...");
 
   try {
     // 1. AssetLoader 초기화 및 에셋 로드
     assetLoader = new AssetLoader();
-    console.log('📦 에셋 로딩 중...');
+    console.log("📦 에셋 로딩 중...");
     await assetLoader.loadAll();
-    console.log('✅ 에셋 로딩 완료!');
+    console.log("✅ 에셋 로딩 완료!");
 
     // 2. Renderer 초기화
     renderer = new Renderer({
-      backgroundCanvasId: 'background-canvas',
-      gameCanvasId: 'circle-canvas',
+      backgroundCanvasId: "background-canvas",
+      gameCanvasId: "circle-canvas",
     });
-    console.log('🎨 렌더러 초기화 완료');
+    console.log("🎨 렌더러 초기화 완료");
 
     // 3. 배경 이미지 설정
-    const backgroundImage = assetLoader.getMap('graveyardFinal');
+    const backgroundImage = assetLoader.getMap("graveyardFinal");
     if (backgroundImage) {
       renderer.setBackgroundImage(backgroundImage);
     }
@@ -60,10 +60,13 @@ async function init() {
       initialX: window.innerWidth / 2,
       initialY: window.innerHeight / 2,
     });
-    renderer.setGazeCursor(gazeCursor);
 
-    // 5. 이펙트 배열 연결
-    renderer.setEffects(activeEffects);
+    // 5. Game 초기화
+    game = new Game({
+      assetLoader,
+      renderer,
+      gazeCursor,
+    });
 
     // 6. Network (WebSocket) 초기화
     initNetwork();
@@ -71,16 +74,16 @@ async function init() {
     // 7. UI 이벤트 리스너 설정
     setupUIEvents();
 
-    // 8. 렌더러 시작
-    renderer.start();
+    // 8. 게임 시작 (렌더링 루프)
+    game.start();
 
     // 9. 맵 스크롤 로직 시작
     startScrollLoop();
 
-    console.log('🚀 게임 시작!');
+    console.log("🚀 게임 시작!");
   } catch (error) {
-    console.error('❌ 초기화 실패:', error);
-    alert('게임 초기화에 실패했습니다. 콘솔을 확인하세요.');
+    console.error("❌ 초기화 실패:", error);
+    alert("게임 초기화에 실패했습니다. 콘솔을 확인하세요.");
   }
 }
 
@@ -88,7 +91,8 @@ async function init() {
  * Network (WebSocket) 초기화
  */
 function initNetwork() {
-  const serverUrl = import.meta.env.VITE_VULTR_SERVER_URL || 'ws://localhost:8000/ws';
+  const serverUrl =
+    import.meta.env.VITE_VULTR_SERVER_URL || "ws://localhost:8000/ws";
   console.log(`🌐 서버 URL: ${serverUrl}`);
 
   network = new Network({
@@ -99,19 +103,20 @@ function initNetwork() {
 
   // 이벤트 핸들러 등록
   network.onOpen(() => {
-    console.log('🔌 Vultr 서버에 연결되었습니다.');
+    console.log("🔌 Vultr 서버에 연결되었습니다.");
   });
 
   network.onMessage((data) => {
+    // 서버 데이터를 Game에 전달
     processServerData(data);
   });
 
   network.onError((error) => {
-    console.error('🔥 WebSocket 오류:', error);
+    console.error("🔥 WebSocket 오류:", error);
   });
 
   network.onClose(() => {
-    console.log('🔌 WebSocket 연결 종료');
+    console.log("🔌 WebSocket 연결 종료");
   });
 
   // 연결 시작
@@ -122,6 +127,7 @@ function initNetwork() {
  * 서버 데이터 처리
  */
 function processServerData(response: any) {
+  // 1. 시선 데이터 처리 (기존 로직 유지)
   const data = response.face_key_points;
 
   if (
@@ -134,7 +140,15 @@ function processServerData(response: any) {
     data.left_eye &&
     data.right_eye
   ) {
-    const { nose_tip, chin, forehead, left_face, right_face, left_eye, right_eye } = data;
+    const {
+      nose_tip,
+      chin,
+      forehead,
+      left_face,
+      right_face,
+      left_eye,
+      right_eye,
+    } = data;
 
     // 얼굴 중심점 계산
     const face_center_x = (left_eye.x + right_eye.x) / 2;
@@ -177,22 +191,37 @@ function processServerData(response: any) {
     // 데이터가 없을 때 중앙으로
     gazeCursor.setTarget(window.innerWidth / 2, window.innerHeight / 2);
   }
+
+  // 2. 게임 상태 데이터 처리 (서버가 gameState를 보낼 경우)
+  if (response.gameState) {
+    game.updateGameState(response.gameState);
+  }
 }
 
 /**
  * UI 이벤트 설정
  */
 function setupUIEvents() {
-  const webcamToggleBtn = document.getElementById('webcam-toggle') as HTMLButtonElement;
-  const effectTestBtn = document.getElementById('effect-test-btn') as HTMLButtonElement;
-  const effectSelector = document.getElementById('effect-selector') as HTMLSelectElement;
+  const webcamToggleBtn = document.getElementById(
+    "webcam-toggle"
+  ) as HTMLButtonElement;
+  const effectTestBtn = document.getElementById(
+    "effect-test-btn"
+  ) as HTMLButtonElement;
+  const effectSelector = document.getElementById(
+    "effect-selector"
+  ) as HTMLSelectElement;
 
-  console.log('🎮 UI 이벤트 설정 중...', { webcamToggleBtn, effectTestBtn, effectSelector });
+  console.log("🎮 UI 이벤트 설정 중...", {
+    webcamToggleBtn,
+    effectTestBtn,
+    effectSelector,
+  });
 
   // 웹캠 토글
   if (webcamToggleBtn) {
-    webcamToggleBtn.addEventListener('click', () => {
-      console.log('웹캠 토글 클릭');
+    webcamToggleBtn.addEventListener("click", () => {
+      console.log("웹캠 토글 클릭");
       if (webcamActive) {
         stopWebcam();
       } else {
@@ -200,20 +229,33 @@ function setupUIEvents() {
       }
     });
   } else {
-    console.error('❌ webcam-toggle 버튼을 찾을 수 없습니다.');
+    console.error("❌ webcam-toggle 버튼을 찾을 수 없습니다.");
   }
 
   // 이펙트 테스트
   if (effectTestBtn && effectSelector) {
-    effectTestBtn.addEventListener('click', () => {
+    effectTestBtn.addEventListener("click", () => {
       const selectedEffect = effectSelector.value;
-      console.log(`🎆 이펙트 테스트 버튼 클릭! 선택된 이펙트: ${selectedEffect}`);
+      console.log(
+        `🎆 이펙트 테스트 버튼 클릭! 선택된 이펙트: ${selectedEffect}`
+      );
       const pos = gazeCursor.getPosition();
-      console.log('현재 커서 위치:', pos);
-      createEffect(pos.x, pos.y, selectedEffect);
+      console.log("현재 커서 위치:", pos);
+
+      // 테스트용 이펙트를 게임 상태로 추가
+      const testGameState = game.getLatestGameState();
+      testGameState.effects.push({
+        id: `test_${Date.now()}`,
+        type: selectedEffect,
+        x: pos.x,
+        y: pos.y,
+      });
+      game.updateGameState(testGameState);
     });
   } else {
-    console.error('❌ effect-test-btn 버튼 또는 effect-selector를 찾을 수 없습니다.');
+    console.error(
+      "❌ effect-test-btn 버튼 또는 effect-selector를 찾을 수 없습니다."
+    );
   }
 }
 
@@ -225,14 +267,16 @@ function startWebcam() {
     .getUserMedia({ video: true })
     .then((stream) => {
       webcamStream = stream;
-      const video = document.getElementById('video') as HTMLVideoElement;
+      const video = document.getElementById("video") as HTMLVideoElement;
       video.srcObject = stream;
 
       video.onloadedmetadata = () => {
         webcamActive = true;
-        const btn = document.getElementById('webcam-toggle') as HTMLButtonElement;
-        btn.textContent = 'Stop Webcam';
-        btn.classList.add('active');
+        const btn = document.getElementById(
+          "webcam-toggle"
+        ) as HTMLButtonElement;
+        btn.textContent = "Stop Webcam";
+        btn.classList.add("active");
 
         // 프레임 전송 시작 (20fps)
         sendInterval = window.setInterval(() => {
@@ -241,8 +285,8 @@ function startWebcam() {
       };
     })
     .catch((err) => {
-      console.error('웹캠 오류:', err);
-      alert('웹캠을 활성화할 수 없습니다.');
+      console.error("웹캠 오류:", err);
+      alert("웹캠을 활성화할 수 없습니다.");
     });
 }
 
@@ -260,13 +304,13 @@ function stopWebcam() {
     sendInterval = null;
   }
 
-  const video = document.getElementById('video') as HTMLVideoElement;
+  const video = document.getElementById("video") as HTMLVideoElement;
   video.srcObject = null;
 
   webcamActive = false;
-  const btn = document.getElementById('webcam-toggle') as HTMLButtonElement;
-  btn.textContent = 'Start Webcam';
-  btn.classList.remove('active');
+  const btn = document.getElementById("webcam-toggle") as HTMLButtonElement;
+  btn.textContent = "Start Webcam";
+  btn.classList.remove("active");
 
   // 커서 리셋
   gazeCursor.setPosition(window.innerWidth / 2, window.innerHeight / 2);
@@ -282,45 +326,13 @@ function stopWebcam() {
 function sendFrameToServer() {
   if (!network.isConnected()) return;
 
-  const video = document.getElementById('video') as HTMLVideoElement;
-  const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-  const context = canvas.getContext('2d')!;
+  const video = document.getElementById("video") as HTMLVideoElement;
+  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+  const context = canvas.getContext("2d")!;
 
   context.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
   network.send(dataUrl);
-}
-
-/**
- * 이펙트 생성
- */
-function createEffect(x: number, y: number, effectName: string) {
-  console.log(`🎨 이펙트 생성 시도: ${effectName} at (${x}, ${y})`);
-  
-  const vfxData = assetLoader.getVFXWithMetadata(effectName);
-
-  if (!vfxData) {
-    console.error(`❌ 이펙트 "${effectName}"을 찾을 수 없습니다.`);
-    return;
-  }
-
-  const { image, metadata } = vfxData;
-  console.log('✅ VFX 데이터 로드 성공:', metadata);
-
-  const effect = new Effect({
-    x,
-    y,
-    image,
-    frameWidth: metadata.frameWidth,
-    frameHeight: metadata.frameHeight,
-    frameCount: metadata.frameCount,
-    frameDuration: metadata.frameDuration,
-    loop: metadata.loop,
-    scale: metadata.scale,
-  });
-
-  activeEffects.push(effect);
-  console.log(`✨ 이펙트 추가됨! 현재 활성 이펙트 수: ${activeEffects.length}`);
 }
 
 /**
@@ -334,8 +346,8 @@ function startScrollLoop() {
       EDGE_THRESHOLD
     );
 
-    const isAtLeftEdge = edgeDirection === 'left';
-    const isAtRightEdge = edgeDirection === 'right';
+    const isAtLeftEdge = edgeDirection === "left";
+    const isAtRightEdge = edgeDirection === "right";
 
     if (isAtLeftEdge || isAtRightEdge) {
       if (edgeHoldStartTime === 0) {
@@ -348,17 +360,22 @@ function startScrollLoop() {
         const currentOffset = renderer.getBackgroundOffset();
 
         // 최대 스크롤 계산
-        const backgroundImage = assetLoader.getMap('graveyardFinal');
+        const backgroundImage = assetLoader.getMap("graveyardFinal");
         if (backgroundImage && backgroundImage.complete) {
           const imageWidth =
-            backgroundImage.naturalWidth * (window.innerHeight / backgroundImage.naturalHeight);
+            backgroundImage.naturalWidth *
+            (window.innerHeight / backgroundImage.naturalHeight);
           const maxScroll = (imageWidth - window.innerWidth) / 2;
 
           if (maxScroll > 0) {
             if (isAtLeftEdge) {
-              renderer.setBackgroundOffset(Math.min(currentOffset + SCROLL_SPEED, maxScroll));
+              renderer.setBackgroundOffset(
+                Math.min(currentOffset + SCROLL_SPEED, maxScroll)
+              );
             } else if (isAtRightEdge) {
-              renderer.setBackgroundOffset(Math.max(currentOffset - SCROLL_SPEED, -maxScroll));
+              renderer.setBackgroundOffset(
+                Math.max(currentOffset - SCROLL_SPEED, -maxScroll)
+              );
             }
           }
         }
@@ -370,4 +387,4 @@ function startScrollLoop() {
 }
 
 // 페이지 로드 시 초기화
-window.addEventListener('DOMContentLoaded', init);
+window.addEventListener("DOMContentLoaded", init);
