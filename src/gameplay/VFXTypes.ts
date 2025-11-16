@@ -11,6 +11,7 @@ export interface VFXMetadata {
   frameDuration: number; // ms
   loop?: boolean;
   scale?: number;
+  yOffset?: number; // y축 오프셋 (기본 0.7에서 조정, 예: -0.3 = 화면 높이의 40% 지점)
 }
 
 export interface VFXConfig {
@@ -28,7 +29,7 @@ export const VFX_TYPES: VFXConfig = {
     frameCount: 19,
     frameDuration: 50,
     loop: false,
-    scale: 1.5,
+    scale: 3,
   },
   fireSlash: {
     path: "/assets/vfx/fire_slash-sheet.png",
@@ -37,7 +38,7 @@ export const VFX_TYPES: VFXConfig = {
     frameCount: 19,
     frameDuration: 50,
     loop: false,
-    scale: 1.5,
+    scale: 3,
   },
   fireVortexRed: {
     path: "/assets/vfx/fire_vortex_red-sheet.png",
@@ -46,7 +47,7 @@ export const VFX_TYPES: VFXConfig = {
     frameCount: 27,
     frameDuration: 40,
     loop: false,
-    scale: 1.5,
+    scale: 3,
   },
   fireHurricaneBlue: {
     path: "/assets/vfx/fire_hurricane_blue-sheet.png",
@@ -55,7 +56,7 @@ export const VFX_TYPES: VFXConfig = {
     frameCount: 17,
     frameDuration: 60,
     loop: false,
-    scale: 1.5,
+    scale: 3,
   },
   meteorShowerRed: {
     path: "/assets/vfx/meteor_shower-red-sheet.png",
@@ -64,7 +65,8 @@ export const VFX_TYPES: VFXConfig = {
     frameCount: 24,
     frameDuration: 60,
     loop: false,
-    scale: 1.5,
+    scale: 3,
+    yOffset: 0.1, // 화면 상단 30% 지점
   },
   tornado: {
     path: "/assets/vfx/tornado-sheet.png",
@@ -73,7 +75,7 @@ export const VFX_TYPES: VFXConfig = {
     frameCount: 14,
     frameDuration: 60,
     loop: false,
-    scale: 1.5,
+    scale: 3,
   },
   lightningV1: {
     path: "/assets/vfx/lightning_v1-sheet.png",
@@ -82,7 +84,7 @@ export const VFX_TYPES: VFXConfig = {
     frameCount: 17,
     frameDuration: 50,
     loop: false,
-    scale: 1.5,
+    scale: 3,
   },
   lightningV2: {
     path: "/assets/vfx/lightning_v2-sheet.png",
@@ -91,7 +93,7 @@ export const VFX_TYPES: VFXConfig = {
     frameCount: 8,
     frameDuration: 50,
     loop: false,
-    scale: 1.5,
+    scale: 3,
   },
   skyBeam: {
     path: "/assets/vfx/sky_beam-sheet.png",
@@ -100,7 +102,8 @@ export const VFX_TYPES: VFXConfig = {
     frameCount: 20,
     frameDuration: 60,
     loop: false,
-    scale: 1.5,
+    scale: 2,
+    yOffset: -0.2, // 화면 70% 지점
   },
 };
 

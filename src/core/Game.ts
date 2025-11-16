@@ -154,9 +154,15 @@ export class Game {
     for (const effectState of effectStates) {
       if (!existingEffectIds.has(effectState.id)) {
         // x: 정규화된 좌표(0~1)를 픽셀로 변환
-        // y: 화면 하단 60% 지점으로 고정
         const pixelX = effectState.x * window.innerWidth;
-        const fixedY = window.innerHeight * 0.6;
+        
+        // y: VFX 메타데이터의 yOffset 적용 (기본 0.7)
+        const vfxMetadata = this.assetLoader.getVFXMetadata(effectState.type);
+        const baseY = 0.7; // 기본 y 위치 (화면 높이의 70%)
+        const yPosition = vfxMetadata?.yOffset !== undefined 
+          ? baseY + vfxMetadata.yOffset 
+          : baseY;
+        const fixedY = window.innerHeight * yPosition;
         
         const effect = this.createEffect(
           effectState.type,
