@@ -50,15 +50,16 @@
       /* 게임 UI */
       #game-ui {
         position: fixed;
-        top: 20px;
-        left: 420px; /* all.png 오른쪽으로 이동 */
-        color: white;
+        top: 5px;
+        left: 41%;
+        transform: translateX(-50%);
+        color: #f5eac4;
         font-family: "Arial", sans-serif;
         z-index: 100;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
       }
       #game-ui > div {
-        font-size: 24px;
+        font-size: 50px;
         font-weight: bold;
         margin-bottom: 10px;
       }
@@ -79,23 +80,6 @@
     
     <canvas id="background-canvas"></canvas>
     <canvas id="circle-canvas"></canvas>
-
-    <!-- 상단 프레임 이미지 -->
-    <img
-      id="top-frame"
-      src="./public/assets/Status/frame.png"
-      alt="Top Frame"
-      style="
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 800px;
-        height: auto;
-        z-index: 100;
-        pointer-events: none;
-      "
-    />
 
     <!-- 중앙 상단 Status2 이미지 -->
     <img
@@ -121,7 +105,7 @@
       alt="Guide Button"
       style="
         position: fixed;
-        top: 7px;
+        top: 4px;
         left: 1050px;
         width: 200px;
         height: auto;
@@ -140,7 +124,7 @@
       alt="Skip Button"
       style="
         position: fixed;
-        top: 5px;
+        top: 2px;
         left: 930px;
         width: 150px;
         height: auto;
@@ -152,18 +136,23 @@
       onmouseout="this.style.transform='scale(1)'"
     />
 
+    <!-- Score 이미지 -->
+    <img
+      src="assets/Status/score.png"
+      alt="Score"
+      style="
+        position: fixed;
+        top: 8px;
+        left: 34%;
+        transform: translateX(-50%);
+        z-index: 100;
+        height: 60px;
+      "
+    />
+
     <!-- 게임 UI -->
     <div id="game-ui">
-      <div
-        id="witch-hp"
-        style="color: #00ff00; font-size: 28px; margin-bottom: 15px"
-      >
-        HP: 1000/1000 (100%)
-      </div>
-      <div id="score">Score: 0</div>
-      <div id="wave">Wave: 1</div>
-      <div id="gold">Gold: 0</div>
-      <div id="enemies-count">Enemies: 0</div>
+      <div id="score">0</div>
     </div>
 
     <!-- 제스처 시퀀스 UI -->
