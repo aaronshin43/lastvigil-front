@@ -221,45 +221,36 @@ function processServerData(response: any) {
     checkAndScrollCamera(worldX);
   }
 
-  // 2. 제스처 데이터 처리
-  if (response.hand === "DETECTED" && response.gesture) {
-    console.log(`✋ 제스처 감지: ${response.gesture}`);
-
-    // 제스처 감지 시 Wizard 공격 애니메이션 실행
-    renderer.playAttackAnimation();
-
-    // 제스처 → 스킬 매핑
-    // const skillMapping: { [key: string]: string } = {
-    //   A: "fireSlash",
-    //   C: "iceBlast",
-    //   L: "lightningBolt",
-    //   S: "shadowStrike",
-    // };
-
-    // const skillType = skillMapping[response.gesture];
-    // if (skillType) {
-    //   console.log(`🔥 스킬 발동: ${skillType}`);
-    //   // 서버가 이미 스킬 발동을 처리하므로 여기서는 로그만
-    //   // 실제 이펙트는 gameState.effects에 포함되어 렌더링됨
-    // }
-  }
-
-  // 3. ✨ 게임 상태 데이터 처리 (20fps로 업데이트)
+  // 2. ✨ 게임 상태 데이터 처리 (20fps로 업데이트)
   if (response.gameState) {
     console.log(`🎮 게임 상태 업데이트:`, {
-      // enemies: response.gameState.enemies?.length || 0,
-      // effects: response.gameState.effects?.length || 0,
-      // enemyData: response.gameState.enemies, // 🔍 적 데이터 상세 확인
+      enemies: response.gameState.enemies?.length || 0,
+      effects: response.gameState.effects?.length || 0,
+      effectsData: response.gameState.effects, // 🔍 이펙트 데이터 상세 확인
       score: response.gameState.playerScore,
       wave: response.gameState.waveNumber,
       HP: response.gameState.playerHP,
+      gestureSequence: response.gameState.gestureSequence,
+      gestureMatched: response.gameState.gestureMatched,
     });
+
+    // 제스처 시퀀스 UI 업데이트
+    const gestureSequenceElement = document.getElementById("gesture-sequence");
+    if (gestureSequenceElement && response.gameState.gestureSequence) {
+      gestureSequenceElement.textContent = response.gameState.gestureSequence;
+    }
+
+    // 제스처 시퀀스 매칭 성공 시 공격 애니메이션 실행
+    if (response.gameState.gestureMatched === true) {
+      console.log(`🔥 제스처 시퀀스 매칭 성공! 스킬 발동`);
+      renderer.playAttackAnimation();
+    }
 
     // Game 클래스에 전달하여 렌더링
     game.updateGameState(response.gameState);
   }
 
-  // 4. 🎮 게임 오버 처리
+  // 3. 🎮 게임 오버 처리
   if (response.type === "gameOver") {
     console.log("💀 게임 오버!", {
       finalScore: response.finalScore,
