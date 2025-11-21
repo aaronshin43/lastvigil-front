@@ -19,7 +19,7 @@ https://github.com/user-attachments/assets/b35207fb-6e8d-430c-ba81-72b627b3c055
 ## Architecture
 
 ### Frontend (Client)
-- **Technology**: TypeScript, HTML5 Canvas, WebSocket
+- **Technology**: TypeScript, HTML5 Canvas, WebSocket, Vite
 - **Role**: Rendering engine and video transmitter
 - **Key Components**:
   - `Renderer.ts`: 60fps rendering loop using requestAnimationFrame
