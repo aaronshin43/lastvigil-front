@@ -4,6 +4,9 @@
 
 A 2D Gothic action defense game where players cast magic using real-time gaze tracking and ASL alphabet hand gestures via webcam. The game features a cloud-based architecture with AI analysis running on Vultr GPU servers.
 
+## Demo
+https://github.com/user-attachments/assets/b35207fb-6e8d-430c-ba81-72b627b3c055
+
 ## Features
 
 - **Gaze-Based Aiming**: Attack direction determined by player's eye movement (left/right screen gaze)
