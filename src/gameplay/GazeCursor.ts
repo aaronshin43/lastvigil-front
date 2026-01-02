@@ -38,7 +38,7 @@ export class GazeCursor {
 
   constructor(config: GazeCursorConfig) {
     this.size = config.size ?? 220;
-    this.chaseSpeed = config.chaseSpeed ?? 0.08;
+    this.chaseSpeed = config.chaseSpeed ?? 0.2; // Increased from 0.08 to 0.2 for smoother tracking
     this.assetLoader = config.assetLoader;
 
     // Set initial position
@@ -90,9 +90,13 @@ export class GazeCursor {
    * @param deltaTime Time elapsed from previous frame (ms)
    */
   update(deltaTime: number = 16): void {
-    // Smooth tracking using linear interpolation
-    this.currentX += (this.targetX - this.currentX) * this.chaseSpeed;
-    this.currentY += (this.targetY - this.currentY) * this.chaseSpeed;
+    // Frame-independent smooth tracking using exponential interpolation
+    // Normalize deltaTime to 60fps standard (16.67ms)
+    const normalizedDelta = deltaTime / 16.67;
+    const smoothFactor = 1 - Math.pow(1 - this.chaseSpeed, normalizedDelta);
+    
+    this.currentX += (this.targetX - this.currentX) * smoothFactor;
+    this.currentY += (this.targetY - this.currentY) * smoothFactor;
 
     // Update animation frame
     this.frameTimer += deltaTime;
