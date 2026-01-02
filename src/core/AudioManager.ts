@@ -8,6 +8,10 @@ export class AudioManager {
   private isMuted: boolean = false;
   private sfxVolume: number = 0.6; // 효과음 기본 볼륨
 
+  // 효과음 오디오 풀 (미리 로드하여 재사용)
+  private sfxPool: Map<string, HTMLAudioElement[]> = new Map();
+  private readonly POOL_SIZE = 3; // 동일 효과음 최대 3개 동시 재생
+
   // 효과음 파일 경로 매핑
   private readonly SFX_PATHS: { [key: string]: string } = {
     // Fire 속성 공격 소리
@@ -15,7 +19,7 @@ export class AudioManager {
     fireCast2: "/assets/sound/EM_FIRE_CAST_02.ogg",
     fireImpact: "/assets/sound/EM_FIRE_IMPACT_01.ogg",
     fireLaunch: "/assets/sound/EM_FIRE_LAUNCH_01.ogg",
-    
+
     // Light 속성 공격 소리
     lightCastLarge: "/assets/sound/EM_LIGHT_CAST_01_L.ogg",
     lightCastSmall: "/assets/sound/EM_LIGHT_CAST_02_S.ogg",
@@ -31,7 +35,7 @@ export class AudioManager {
     fireHurricaneBlue: "fireCast1",
     meteorShowerRed: "fireImpact",
     tornado: "fireCast2",
-    
+
     // Light 계열 VFX
     lightningV1: "lightCastLarge",
     lightningV2: "lightCastSmall",
@@ -49,6 +53,25 @@ export class AudioManager {
     if (savedMuteState === "true") {
       this.isMuted = true;
       this.audio.muted = true;
+    }
+
+    // 효과음 오디오 풀 초기화 (미리 로드)
+    this.initializeSFXPool();
+  }
+
+  /**
+   * 효과음 오디오 풀 초기화
+   */
+  private initializeSFXPool(): void {
+    for (const [key, path] of Object.entries(this.SFX_PATHS)) {
+      const pool: HTMLAudioElement[] = [];
+      for (let i = 0; i < this.POOL_SIZE; i++) {
+        const audio = new Audio(path);
+        audio.volume = this.sfxVolume;
+        audio.preload = "auto";
+        pool.push(audio);
+      }
+      this.sfxPool.set(key, pool);
     }
   }
 
@@ -129,23 +152,24 @@ export class AudioManager {
       return;
     }
 
-    const sfxPath = this.SFX_PATHS[sfxKey];
-    if (!sfxPath) {
-      console.warn(`효과음 경로를 찾을 수 없습니다: ${sfxKey}`);
+    const pool = this.sfxPool.get(sfxKey);
+    if (!pool || pool.length === 0) {
+      console.warn(`효과음 풀을 찾을 수 없습니다: ${sfxKey}`);
       return;
     }
 
-    // 새로운 Audio 객체 생성하여 재생 (여러 효과음 동시 재생 가능)
-    const sfx = new Audio(sfxPath);
-    sfx.volume = this.sfxVolume;
-    
-    sfx.play().catch((error) => {
-      console.warn(`효과음 재생 실패 (${vfxType}):`, error);
-    });
+    // 재생 가능한 오디오 찾기 (재생 중이 아닌 것)
+    let availableAudio = pool.find((audio) => audio.paused || audio.ended);
 
-    // 재생이 끝나면 자동으로 메모리 정리
-    sfx.addEventListener("ended", () => {
-      sfx.remove();
+    // 모두 재생 중이면 첫 번째 것을 재사용
+    if (!availableAudio) {
+      availableAudio = pool[0];
+      availableAudio.currentTime = 0; // 처음부터 재생
+    }
+
+    availableAudio.volume = this.sfxVolume;
+    availableAudio.play().catch(() => {
+      // 재생 실패는 조용히 무시 (성능 최우선)
     });
   }
 

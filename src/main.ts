@@ -133,13 +133,15 @@ function startGame() {
 function initializeGame() {
   // Prevent duplicate initialization if already initialized
   if (isGameInitialized) {
-    console.warn("⚠️ Game is already initialized. Preventing duplicate initialization.");
+    console.warn(
+      "⚠️ Game is already initialized. Preventing duplicate initialization."
+    );
     return;
   }
 
   try {
     // console.log("🎮 Game initialization starting...");
-    
+
     // 3. Initialize Camera
     camera = new Camera({
       worldWidth: 2148, // Backend map size
@@ -210,9 +212,9 @@ function initializeGame() {
  * Initialize Network (WebSocket)
  */
 function initNetwork() {
-  const serverUrl =
-    import.meta.env.VITE_VULTR_SERVER_URL || "ws://localhost:8000/ws";
-  // console.log(`🌐 Server URL: ${serverUrl}`);
+  // DuckDNS with Let's Encrypt SSL
+  const serverUrl = "wss://lastvigil.duckdns.org/ws";
+  console.log(`🌐 Server URL: ${serverUrl}`);
 
   network = new Network({
     serverUrl,
@@ -254,7 +256,11 @@ function initNetwork() {
  */
 function processServerData(response: any) {
   // 1. Process gaze data - receive normalized coordinates (0-1) based on entire map from backend
-  if (response.gaze && response.gaze.gaze_x !== undefined && response.gaze.gaze_y !== undefined) {
+  if (
+    response.gaze &&
+    response.gaze.gaze_x !== undefined &&
+    response.gaze.gaze_y !== undefined
+  ) {
     const { gaze_x, gaze_y } = response.gaze;
 
     // 🔍 Check backend raw data
@@ -302,7 +308,7 @@ function processServerData(response: any) {
 
       gestureSequenceElement.textContent = sequenceText;
       currentGestureSequence = response.gameState.gestureSequence;
-      
+
       // Update if guide is currently open
       const aslGuideContainer = document.getElementById("asl-guide-container");
       if (aslGuideContainer && aslGuideContainer.style.display === "block") {
@@ -317,18 +323,20 @@ function processServerData(response: any) {
     }
 
     // Detect wave change (display only when increasing, prevent duplicates)
-    if (response.gameState.waveNumber && 
-        response.gameState.waveNumber > currentWave && 
-        !isShowingWaveAnnouncement) {
+    if (
+      response.gameState.waveNumber &&
+      response.gameState.waveNumber > currentWave &&
+      !isShowingWaveAnnouncement
+    ) {
       // console.log(`🌊 Wave change: ${currentWave} → ${response.gameState.waveNumber}`);
       const newWave = response.gameState.waveNumber;
       currentWave = newWave;
-      
+
       // Skip first wave as it was already shown in initial countdown
       if (newWave > 1) {
         isShowingWaveAnnouncement = true;
         countdownScreen.showWaveAnnouncement(newWave);
-        
+
         // Reset flag after 1.5 seconds (same as animation duration)
         setTimeout(() => {
           isShowingWaveAnnouncement = false;
@@ -441,7 +449,11 @@ function setupUIEvents() {
       const video = document.getElementById("video") as HTMLVideoElement;
       if (video) {
         video.classList.toggle("visible");
-        console.log(`📹 Webcam visibility toggled: ${video.classList.contains("visible") ? "visible" : "hidden"}`);
+        console.log(
+          `📹 Webcam visibility toggled: ${
+            video.classList.contains("visible") ? "visible" : "hidden"
+          }`
+        );
       }
     }
   });
@@ -474,7 +486,7 @@ function updateASLGuide() {
   const letters = Array.isArray(currentGestureSequence)
     ? currentGestureSequence
     : currentGestureSequence.split("");
-  
+
   // Hide if empty array
   if (letters.length === 0) {
     console.warn("⚠️ Gesture sequence is empty.");
@@ -484,9 +496,9 @@ function updateASLGuide() {
 
   // Remove all existing images
   aslGuideImages.innerHTML = "";
-  
+
   // console.log(`📖 Creating ASL guide:`, letters, `(${letters.length} characters)`);
-  
+
   letters.forEach((letter) => {
     const upperLetter = letter.toUpperCase();
 
@@ -532,7 +544,7 @@ function startWebcam() {
 
       video.onloadedmetadata = () => {
         webcamActive = true;
-        
+
         // // Update button if it exists (continue even if not)
         // const btn = document.getElementById("webcam-toggle") as HTMLButtonElement;
         // if (btn) {
@@ -540,14 +552,14 @@ function startWebcam() {
         //   btn.classList.add("active");
         // }
 
-        // Start frame transmission (20fps)
+        // Start frame transmission (5fps) - Reduced from 20fps to save bandwidth
         sendInterval = window.setInterval(() => {
           sendFrameToServer();
-        }, 50);
+        }, 200);
       };
-      
+
       // Explicitly call play() (for autoplay)
-      video.play().catch(err => {
+      video.play().catch((err) => {
         console.error("❌ Video playback failed:", err);
       });
     })
@@ -612,7 +624,7 @@ function sendFrameToServer() {
   }
 
   context.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.4); // Reduced quality for bandwidth
   network.send(dataUrl);
 }
 
